@@ -30,28 +30,29 @@ O FacePass é um sistema de controle de acesso baseado em reconhecimento facial.
 - Caio Mendonça de Andrade
 
 ### Histórias de usuário
-1. Gerenciar usuários
+**1. Gerenciar usuários**
+
 Como gestor gostaria de gerenciar os usuários: Cadastrando, removendo e atualizando dados os dado para controle dos mesmos
 
-- Critérios de aceitação:
+**- Critérios de aceitação:**
 - O gestor deve poder cadastrar novos usuários e remover usuários
 - O gestor deve poder atualizar os dados dos usuários
 - Ao final o gestor deve receber uma mensagem de feedback de sua ação.
 
-2. Monitorar registros de acesso
+**2. Monitorar registros de acesso**
 
 Como um gestor, eu quero visualizar e filtrar um relatório de registros de acesso, para que eu possa auditar a segurança e a movimentação no ambiente.
 
-- Critérios de aceitação: 
+**- Critérios de aceitação:**
 - A tela de relatório deve exibir uma lista com, no mínimo: Nome do Usuário, Data, Hora e Local/Câmera do acesso.
 - Deve ser possível filtrar os registros por nome de usuário.
 - Deve ser possível filtrar os registros por um intervalo de data e hora.
 - Deve haver uma opção para exportar os dados filtrados para um arquivo (ex: .CSV ou .PDF)
 
-3. Notificações de Tentativa de Acesso Negado
+**3. Notificações de Tentativa de Acesso Negado**
 Como um gestor, eu quero ser notificado em tempo real sobre tentativas de acesso negadas, para que eu possa identificar rapidamente possíveis falhas no sistema ou tentativas de entrada indevida
 
-- Critérios de aceitação:
+**- Critérios de aceitação:**
 - Quando um rosto não reconhecido (não cadastrado) tenta o acesso, uma notificação deve ser gerada para o gestor.
 - Quando um usuário cadastrado tem seu acesso negado por algum motivo (ex: foto de baixa qualidade, bloqueio temporário), uma notificação também deve ser gerada.
 - A notificação deve conter, no mínimo, a data, a hora e o local/câmera da tentativa de acesso.
