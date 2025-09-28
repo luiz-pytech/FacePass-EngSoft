@@ -64,7 +64,7 @@ Você pode obter este repositório de três formas:
 ### Clonar via HTTPS
 
 ```bash
-git clone https://github.com/mvapedrosa/Eng-de-Software-UFRN.git
+git clone https://github.com/luiz-pytech/FacePass-EngSoft.git
 ```
 
 Isso criará uma cópia local do repositório em sua máquina.
@@ -74,7 +74,7 @@ Isso criará uma cópia local do repositório em sua máquina.
 Se você já configurou sua chave SSH no GitHub, pode clonar usando:
 
 ```bash
-git clone git@github.com:mvapedrosa/Eng-de-Software-UFRN.git
+git clone git@github.com:luiz-pytech/FacePass-EngSoft.git
 ```
 
 Isso criará uma cópia local do repositório em sua máquina.
