@@ -21,7 +21,7 @@ Para o FacePass, este diagrama serve como um *blueprint* para o desenvolvimento 
 
 ### Descrição do Diagrama
 
-![Diagrama de Classes](DiagramClass.drawio.png)
+![Diagrama de Classes](class_diagram.png)
 
 O diagrama apresenta as seguintes classes principais:
 
@@ -49,7 +49,7 @@ Para o FacePass, este diagrama foi construido para ilustrar os fluxos principais
 
 ### Descrição do Diagrama e Relação com as Histórias de Usuário
 
-![Diagrama de Atividades](DiagramaAtividades.drawio.jpg)
+![Diagrama de Atividades](activity_diagram.png)
 
 O diagrama é composto por quatro fluxos principais que atendem diretamente às Histórias de Usuário (HU) definidas.
 
