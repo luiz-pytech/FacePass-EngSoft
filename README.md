@@ -103,7 +103,8 @@ FacePass-EngSoft/
 │   ├── database/      # persistência de dados
 │   ├── api/           # rotas/serviços
 │   └── ui/            # interface (streamlit/web)
-└── docs/              # documentação e diagramas
+└── diagrams/          # diagramas
+└── docs/              # documentação
 ```
 
 - LICENSE: termos da licença do projeto (MIT).
@@ -114,7 +115,8 @@ requirements.txt: lista das dependências necessárias para executar o projeto.
 - facepass/database: gerenciamento da persistência de dados (usuários, imagens e logs).
 - facepass/api: rotas e serviços de integração (ex.: cadastro, autenticação, logs).
 - facepass/ui: interface gráfica/web (ex.: protótipo com Streamlit ou página em Flask).
-- docs/: documentação e diagramas de apoio ao projeto.
+- diagrams/: diagramas de apoio ao projeto.
+- docs/: documentação de auxilio ao projeto
 
 ## Licença
 
