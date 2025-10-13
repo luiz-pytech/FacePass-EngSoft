@@ -1,12 +1,14 @@
+from typing import Optional
 class Usuario:
     "Classe que representa usuários do sistema."
-    id: int = None
-    nome: str = None
-    email: str = None
-    cpf: str = None
-    foto_reconhecimento: Optional[bytes] = None
-    aprovado: bool = False
-    ativo: bool = False
-    cargo: str =  None
+    def __init__ (self):
+        self.id: int = None
+        self.nome: str = None
+        self.email: str = None
+        self.cpf: str = None
+        self.foto_reconhecimento: Optional[bytes] = None
+        self.aprovado: bool = False
+        self.ativo: bool = False
+        self.cargo: str =  None
 
     
