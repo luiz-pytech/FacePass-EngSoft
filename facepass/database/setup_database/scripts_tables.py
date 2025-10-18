@@ -1,6 +1,6 @@
 import os
 import dotenv
-from connection import DatabaseConnection
+from facepass.database.setup_database.connection import DatabaseConnection
 
 dotenv.load_dotenv()
 

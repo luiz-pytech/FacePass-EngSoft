@@ -31,3 +31,26 @@ class DatabaseConnection:
 
     def get_connection(self):
         return self.connection
+
+    def execute_query(self, query, params=None):
+        if self.connection is None:
+            raise RuntimeError(
+                "No database connection. Call connect() before executing queries.")
+
+        cursor = self.connection.cursor()
+        try:
+            cursor.execute(query, params or ())
+            if query.strip().lower().startswith("select"):
+                result = cursor.fetchall()
+            else:
+                result = cursor.rowcount
+            self.connection.commit()
+            return result
+        except mysql.connector.Error:
+            try:
+                self.connection.rollback()
+            except Exception:
+                pass
+            raise
+        finally:
+            cursor.close()
