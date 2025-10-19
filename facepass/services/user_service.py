@@ -41,7 +41,6 @@ class UsuarioService:
         if not ValidatorService.validar_usuario(usuario):
             raise ValueError("Dados do usuário inválidos.")
 
-        # Novos usuários sempre iniciam como não aprovados (US1)
         usuario.approved = False
         usuario.id = 0
 
