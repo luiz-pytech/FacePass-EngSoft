@@ -3,10 +3,10 @@ from typing import List, Dict, Any
 
 
 class QueryExecutor:
-    def __init__(self, connection: mysql.connector.MySQLConnection):
+    def __init__(self, connection: Any):
         self.connection = connection
 
-    def execute_query(self, query: str, params: tuple = (None,)):
+    def execute_query(self, query: str, params: tuple = ()):
         """
         Executes a SELECT query and returns a LIST of dictionaries (fetchall).
         Ideal for fetching multiple records.
@@ -26,7 +26,7 @@ class QueryExecutor:
         finally:
             cursor.close()
 
-    def execute_query_one(self, query: str, params: tuple = (None,)):
+    def execute_query_one(self, query: str, params: tuple = ()):
         if self.connection is None:
             raise RuntimeError(
                 "No database connection. Call connect() before executing queries.")
@@ -42,7 +42,7 @@ class QueryExecutor:
         finally:
             cursor.close()
 
-    def execute_update(self, query: str, params: tuple = (None,)):
+    def execute_update(self, query: str, params: tuple = ()):
         """
         Executes INSERT, UPDATE, or DELETE queries.
 
@@ -68,7 +68,7 @@ class QueryExecutor:
         finally:
             cursor.close()
 
-    def execute_insert(self, query: str, params: tuple = (None,)):
+    def execute_insert(self, query: str, params: tuple = ()):
         if self.connection is None:
             raise RuntimeError(
                 "No database connection. Call connect() before executing queries.")

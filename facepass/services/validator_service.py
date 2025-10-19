@@ -21,6 +21,6 @@ class ValidatorService:
 
     @staticmethod
     def validar_usuario(usuario: Usuario) -> bool:
-        return (ValidatorService.validar_nome(usuario.nome) and
+        return (ValidatorService.validar_nome(usuario.name) and
                 ValidatorService.validar_email(usuario.email) and
                 ValidatorService.validar_cpf(usuario.cpf))

@@ -88,3 +88,107 @@ class AccessService:
             List of all access logs
         """
         return self.acesso_repository.export_registers()
+
+    def list_all_access_records(self):
+        """
+        Lists all access records.
+
+        Returns:
+            List of all access records
+        """
+        return self.acesso_repository.list_all_registers()
+
+    def get_success_rate(self) -> float:
+        """
+        Calculates the success rate of access attempts.
+
+        Returns:
+            Success rate as a percentage
+        """
+        all_records = self.acesso_repository.list_all_registers()
+        if not all_records:
+            return 0.0
+
+        total_attempts = len(all_records)
+        successful_attempts = sum(1 for record in all_records if record[4])
+
+        success_rate = (successful_attempts / total_attempts) * 100
+        return success_rate
+
+    def get_registers_by_filters(self, filters: dict):
+        """
+        Busca registros com filtros avançados (para página de Relatórios).
+
+        Args:
+            filters: Dictionary with filters (user_name, status, location, start_date, end_date)
+
+        Returns:
+            List of access records matching the filters
+        """
+        return self.acesso_repository.get_registers_by_filters(
+            user_name=filters.get('user_name', ""),
+            status=filters.get('status', ""),
+            location=filters.get('location', ""),
+            start_date=filters.get('start_date', ""),
+            end_date=filters.get('end_date', "")
+        )
+
+    def get_today_access_count(self) -> int:
+        """
+        Retorna total de acessos hoje (para Home).
+
+        Returns:
+            Number of access attempts today
+        """
+        return self.acesso_repository.get_today_access_count()
+
+    def get_statistics_by_period(self, start_date: str = "", end_date: str = "") -> dict:
+        """
+        Estatísticas do período (total, permitidos, negados, taxa).
+
+        Args:
+            start_date: Start date (optional)
+            end_date: End date (optional)
+
+        Returns:
+            Dictionary with statistics
+        """
+        if start_date and end_date:
+            records = self.acesso_repository.get_register_by_period(
+                start_date, end_date)
+        else:
+            records = self.acesso_repository.list_all_registers()
+
+        total = len(records)
+        if total == 0:
+            return {
+                'total': 0,
+                'permitidos': 0,
+                'negados': 0,
+                'taxa_sucesso': 0.0
+            }
+
+        # Assumindo que access_allowed está na posição 4 do resultado
+        permitidos = sum(1 for record in records if record[4])
+        negados = total - permitidos
+        taxa_sucesso = (permitidos / total) * 100
+
+        return {
+            'total': total,
+            'permitidos': permitidos,
+            'negados': negados,
+            'taxa_sucesso': round(taxa_sucesso, 2)
+        }
+
+    def get_registers_with_user_info(self, start_date: str = "", end_date: str = ""):
+        """
+        Retorna registros com informações do usuário (JOIN).
+
+        Args:
+            start_date: Start date (optional)
+            end_date: End date (optional)
+
+        Returns:
+            List of access records with user information
+        """
+        return self.acesso_repository.get_registers_with_user_info(start_date, end_date)

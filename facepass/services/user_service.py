@@ -81,7 +81,7 @@ class UsuarioService:
         Raises:
             ValueError: If the user is not found
         """
-        self.remove_user(user_id)
+        self.usuario_repository.reject_user(user_id)
 
     def list_pending_approvals(self):
         """
@@ -91,6 +91,24 @@ class UsuarioService:
             List of unapproved users
         """
         return self.usuario_repository.list_unapproved_users()
+
+    def list_approved_users(self):
+        """
+        Lists all approved users.
+
+        Returns:
+            List of approved users
+        """
+        return self.usuario_repository.list_approved_users()
+
+    def list_denied_users(self):
+        """
+        Lists all denied users.
+
+        Returns:
+            List of denied users
+        """
+        return self.usuario_repository.list_denied_users()
 
     def update_user(self, usuario: Usuario) -> None:
         """
@@ -126,3 +144,53 @@ class UsuarioService:
             raise ValueError("Usuário não encontrado.")
 
         self.usuario_repository.remove_user(user_id)
+
+    def list_all_users(self):
+        """
+        Lists all users in the system.
+
+        Returns:
+            List of all users
+        """
+        return self.usuario_repository.list_all_users()
+
+    def get_user_by_id(self, user_id: int):
+        """
+        Gets a user by ID.
+
+        Args:
+            user_id: ID of the user
+
+        Returns:
+            User data or None if not found
+        """
+        return self.usuario_repository.get_user_by_id(user_id)
+
+    def get_user_by_email(self, email: str):
+        """
+        Gets a user by email.
+
+        Args:
+            email: Email of the user
+
+        Returns:
+            User data or None if not found
+        """
+        return self.usuario_repository.get_user_by_email(email)
+
+    def get_statistics(self) -> dict:
+        """
+        Returns user statistics for the home page.
+
+        Returns:
+            Dictionary with total, approved, and pending counts
+        """
+        total = self.usuario_repository.get_user_count()
+        approved = self.usuario_repository.get_approved_user_count()
+        pending = self.usuario_repository.get_pending_user_count()
+
+        return {
+            'total': total,
+            'approved': approved,
+            'pending': pending
+        }

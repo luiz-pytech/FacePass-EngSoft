@@ -44,7 +44,7 @@ class NotificationService:
             created_at=datetime.now(),
             type_notification="new_user_pending",
             message=message,
-            read=False
+            is_read=False
         )
 
         self.notification_repository.save_notification(notificacao)
@@ -85,7 +85,7 @@ class NotificationService:
                 created_at=datetime.now(),
                 type_notification="access_denied",
                 message=message,
-                read=False
+                is_read=False
             )
 
             self.notification_repository.save_notification(notificacao)
