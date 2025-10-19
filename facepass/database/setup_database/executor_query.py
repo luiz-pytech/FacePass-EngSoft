@@ -3,13 +3,13 @@ from typing import List, Dict, Any
 
 
 class QueryExecutor:
-    def __init__(self, connection: mysql.connector.MySQLConnection):
+    def __init__(self, connection: Any):
         self.connection = connection
 
-    def execute_query(self, query: str, params: tuple = (None,)):
+    def execute_query(self, query: str, params: tuple = ()):
         """
-        Executa SELECT e retorna LISTA de dicionários (fetchall)
-        Ideal para: buscar múltiplos registros
+        Executes a SELECT query and returns a LIST of dictionaries (fetchall).
+        Ideal for fetching multiple records.
         """
         if self.connection is None:
             raise RuntimeError(
@@ -26,7 +26,7 @@ class QueryExecutor:
         finally:
             cursor.close()
 
-    def execute_query_one(self, query: str, params: tuple = (None,)):
+    def execute_query_one(self, query: str, params: tuple = ()):
         if self.connection is None:
             raise RuntimeError(
                 "No database connection. Call connect() before executing queries.")
@@ -42,10 +42,12 @@ class QueryExecutor:
         finally:
             cursor.close()
 
-    def execute_update(self, query: str, params: tuple = (None,)):
+    def execute_update(self, query: str, params: tuple = ()):
         """
-        Executa INSERT, UPDATE, DELETE
-        Retorna: número de linhas afetadas
+        Executes INSERT, UPDATE, or DELETE queries.
+
+        Returns:
+            Number of rows affected
         """
         if self.connection is None:
             raise RuntimeError(
@@ -66,7 +68,7 @@ class QueryExecutor:
         finally:
             cursor.close()
 
-    def execute_insert(self, query: str, params: tuple = (None,)):
+    def execute_insert(self, query: str, params: tuple = ()):
         if self.connection is None:
             raise RuntimeError(
                 "No database connection. Call connect() before executing queries.")
