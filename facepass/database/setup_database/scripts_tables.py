@@ -26,51 +26,51 @@ def create_database():
     cursor.execute(f"USE {database}")
 
     cursor.execute("""
-        CREATE TABLE IF NOT EXISTS usuarios (
+        CREATE TABLE IF NOT EXISTS users (
             id INT AUTO_INCREMENT PRIMARY KEY,
-            nome VARCHAR(100) NOT NULL,
+            name VARCHAR(100) NOT NULL,
             email VARCHAR(100) NOT NULL UNIQUE,
             cpf VARCHAR(11) NOT NULL UNIQUE,
-            data_cadastro TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-            foto_reconhecimento BLOB,
-            cargo VARCHAR(50),
-            cadastrado_aprovado BOOLEAN DEFAULT FALSE
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            photo_recognition BLOB,
+            position VARCHAR(50),
+            approved BOOLEAN DEFAULT FALSE
         )
     """)
 
     cursor.execute("""
-        CREATE TABLE IF NOT EXISTS gestor (
+        CREATE TABLE IF NOT EXISTS manager (
             id INT AUTO_INCREMENT PRIMARY KEY,
-            nome VARCHAR(100) NOT NULL,
+            name VARCHAR(100) NOT NULL,
             email VARCHAR(100) NOT NULL UNIQUE,
-            senha_hash VARCHAR(255) NOT NULL
+            password_hash VARCHAR(255) NOT NULL
         )
     """)
 
     cursor.execute("""
-        CREATE TABLE IF NOT EXISTS registroAcesso (
+        CREATE TABLE IF NOT EXISTS accessRegisters (
             id INT AUTO_INCREMENT PRIMARY KEY,
-            usuario_id INT,
-            data_hora TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-            tipo_acesso ENUM('ENTRADA', 'SAIDA'),
-            acesso_permitido BOOLEAN,
-            motivo_rejeicao VARCHAR(255),
-            imagem_capturada BLOB,
-            FOREIGN KEY (usuario_id) REFERENCES usuarios(id)
+            user_id INT,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            type_access VARCHAR(50),
+            access_allowed BOOLEAN,
+            rejection_reason VARCHAR(255),
+            captured_image BLOB,
+            FOREIGN KEY (user_id) REFERENCES users(id)
         )
     """)
 
     cursor.execute("""
-        CREATE TABLE IF NOT EXISTS notificacoes (
+        CREATE TABLE IF NOT EXISTS notifications (
             id INT AUTO_INCREMENT PRIMARY KEY,
-            gestor_id INT,
-            registro_acesso_id INT,
-            data_hora TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-            tipo_notificacao VARCHAR(100),
-            mensagem TEXT,
-            lida BOOLEAN DEFAULT FALSE,
-            FOREIGN KEY (gestor_id) REFERENCES gestor(id),
-            FOREIGN KEY (registro_acesso_id) REFERENCES registroAcesso(id
+            manager_id INT,
+            access_register_id INT,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            type_notification VARCHAR(100),
+            message TEXT,
+            read BOOLEAN DEFAULT FALSE,
+            FOREIGN KEY (manager_id) REFERENCES manager(id),
+            FOREIGN KEY (access_register_id) REFERENCES accessRegisters(id)
         )
     """)
     conn.commit()

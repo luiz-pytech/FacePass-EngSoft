@@ -8,8 +8,8 @@ class QueryExecutor:
 
     def execute_query(self, query: str, params: tuple = (None,)):
         """
-        Executa SELECT e retorna LISTA de dicionários (fetchall)
-        Ideal para: buscar múltiplos registros
+        Executes a SELECT query and returns a LIST of dictionaries (fetchall).
+        Ideal for fetching multiple records.
         """
         if self.connection is None:
             raise RuntimeError(
@@ -44,8 +44,10 @@ class QueryExecutor:
 
     def execute_update(self, query: str, params: tuple = (None,)):
         """
-        Executa INSERT, UPDATE, DELETE
-        Retorna: número de linhas afetadas
+        Executes INSERT, UPDATE, or DELETE queries.
+
+        Returns:
+            Number of rows affected
         """
         if self.connection is None:
             raise RuntimeError(

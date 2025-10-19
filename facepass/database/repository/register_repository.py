@@ -1,7 +1,7 @@
 import mysql.connector
-from setup_database.executor_query import QueryExecutor
+from facepass.database.setup_database.executor_query import QueryExecutor
 from facepass.models.user import Usuario
-from facepass.models.registerAcess import RegistroAcesso
+from facepass.models.registerAccess import RegistroAcesso
 from dotenv import load_dotenv
 import os
 
@@ -15,18 +15,18 @@ class RegistroRepository:
 
     def save_register(self, registro: RegistroAcesso) -> None:
         query = """
-            INSERT into registros_acesso (id, usuario_id, data_hora, tipo_acesso, acesso_permitido, motivo_negacao, imagem_capturada) VALUES
+            INSERT into accessRegisters (id, user_id, created_at, type_access, access_allowed, reason_denied, captured_image) VALUES
             (%s, %s, %s, %s, %s, %s, %s);
         """
-        params = (registro.id, registro.usuario_id, registro.data_hora,
-                  registro.tipo_acesso, registro.acesso_permitido, registro.motivo_negacao, registro.imagem_capturada)
+        params = (registro.id, registro.user_id, registro.created_at,
+                  registro.type_access, registro.access_allowed, registro.reason_denied, registro.captured_image)
         self.executor.execute_insert(query, params)
 
     def get_register_by_period(self, start_date: str, end_date: str):
         query = """
-            SELECT id, usuario_id, data_hora, tipo_acesso, acesso_permitido, motivo_negacao, imagem_capturada 
-            FROM registros_acesso 
-            WHERE data_hora BETWEEN %s AND %s
+            SELECT id, user_id, created_at, type_access, access_allowed, reason_denied, captured_image
+            FROM accessRegisters
+            WHERE created_at BETWEEN %s AND %s
         """
         params = (start_date, end_date)
         results = self.executor.execute_query(query, params)
@@ -34,9 +34,9 @@ class RegistroRepository:
 
     def get_registers_by_user(self, user_id: int):
         query = """
-            SELECT id, usuario_id, data_hora, tipo_acesso, acesso_permitido, motivo_negacao, imagem_capturada 
-            FROM registros_acesso 
-            WHERE usuario_id = %s
+            SELECT id, user_id, created_at, type_access, access_allowed, reason_denied, captured_image
+            FROM accessRegisters
+            WHERE user_id = %s
         """
         params = (user_id,)
         results = self.executor.execute_query(query, params)
@@ -44,17 +44,17 @@ class RegistroRepository:
 
     def list_acess_denied(self):
         query = """
-            SELECT id, usuario_id, data_hora, tipo_acesso, acesso_permitido, motivo_negacao, imagem_capturada 
-            FROM registros_acesso 
-            WHERE acesso_permitido = false
+            SELECT id, user_id, created_at, type_access, access_allowed, reason_denied, captured_image
+            FROM accessRegisters
+            WHERE access_allowed = false
         """
         results = self.executor.execute_query(query)
         return results
 
     def export_registers(self):
         query = """
-            SELECT id, usuario_id, data_hora, tipo_acesso, acesso_permitido, motivo_negacao, imagem_capturada 
-            FROM registros_acesso
+            SELECT id, user_id, created_at, type_access, access_allowed, reason_denied, captured_image
+            FROM accessRegisters
         """
         results = self.executor.execute_query(query)
         return results

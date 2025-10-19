@@ -1,5 +1,5 @@
 import mysql.connector
-from setup_database.executor_query import QueryExecutor
+from facepass.database.setup_database.executor_query import QueryExecutor
 
 
 class ManagerRepository:
@@ -9,7 +9,7 @@ class ManagerRepository:
 
     def create_manager(self, manager_data: dict):
         query = """
-        INSERT INTO gestor (name, email, password_hash)
+        INSERT INTO manager (name, email, password_hash)
         VALUES (%s, %s, %s)
         """
         params = (manager_data['name'], manager_data['email'],

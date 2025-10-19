@@ -1,24 +1,26 @@
 
 class Gestor:
-    def __init__(self, id: int, nome: str, email: str, senha_hash: str):
-        self.id = id
-        self.nome = nome
-        self.email = email
-        self.senha_hash = senha_hash
+    """Model class representing a manager in the FacePass system."""
+
+    def __init__(self, id: int, name: str, email: str, password_hash: str):
+        self.id: int = id
+        self.name: str = name
+        self.email: str = email
+        self.password_hash: str = password_hash
 
     def to_dict(self):
         return {
             "id": self.id,
-            "nome": self.nome,
+            "name": self.name,
             "email": self.email,
-            "senha_hash": self.senha_hash
+            "password_hash": self.password_hash
         }
 
     @classmethod
     def from_dict(cls, data: dict):
         return cls(
             id=data.get("id", 0),
-            nome=data.get("nome", ""),
+            name=data.get("name", ""),
             email=data.get("email", ""),
-            senha_hash=data.get("senha_hash", "")
+            password_hash=data.get("password_hash", "")
         )

@@ -1,6 +1,6 @@
 import re
 from facepass.models.user import Usuario
-from facepass.models.registerAcess import RegistroAcesso
+from facepass.models.registerAccess import RegistroAcesso
 from facepass.models.notification import Notificacao
 
 

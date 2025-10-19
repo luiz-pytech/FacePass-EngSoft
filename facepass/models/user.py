@@ -3,34 +3,36 @@ import datetime
 
 
 class Usuario:
-    def __init__(self, id: int, nome: str, email: str, cpf: str, foto_reconhecimento: bytes):
+    """Model class representing a user in the FacePass system."""
+
+    def __init__(self, id: int, name: str, email: str, cpf: str, photo_recognition: bytes):
         self.id: int = id
-        self.nome: str = nome
+        self.name: str = name
         self.email: str = email
         self.cpf: str = cpf
-        self.data_cadastro: datetime.datetime = datetime.datetime.now()
-        self.foto_reconhecimento: bytes = foto_reconhecimento
-        self.cargo: str = ""
-        self.aprovado: bool = False
+        self.created_at: datetime.datetime = datetime.datetime.now()
+        self.photo_recognition: bytes = photo_recognition
+        self.position: str = ""
+        self.approved: bool = False
 
     def to_dict(self) -> dict:
         return {
             "id": self.id,
-            "nome": self.nome,
+            "name": self.name,
             "email": self.email,
             "cpf": self.cpf,
-            "data_cadastro": self.data_cadastro.isoformat(),
-            "foto_reconhecimento": self.foto_reconhecimento,
-            "cargo": self.cargo,
-            "aprovado": self.aprovado,
+            "created_at": self.created_at.isoformat(),
+            "photo_recognition": self.photo_recognition,
+            "position": self.position,
+            "approved": self.approved,
         }
 
     @classmethod
     def from_dict(cls, data):
         return cls(
             id=data.get("id"),
-            nome=data.get("nome"),
+            name=data.get("name"),
             email=data.get("email"),
             cpf=data.get("cpf"),
-            foto_reconhecimento=data.get("foto_reconhecimento"),
+            photo_recognition=data.get("photo_recognition"),
         )
