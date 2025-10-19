@@ -2,13 +2,14 @@ from datetime import datetime
 
 
 class Notificacao:
-    def __init__(self, id, gestor_id, registro_acesso_id, data_hora, tipo_notificacao, mensagem):
+    def __init__(self, id, gestor_id, registro_acesso_id, data_hora, tipo_notificacao, mensagem, lida=False):
         self.id = id
         self.gestor_id = gestor_id
         self.registro_acesso_id = registro_acesso_id
         self.data_hora = data_hora
         self.tipo_notificacao = tipo_notificacao
         self.mensagem = mensagem
+        self.lida = lida
 
     def to_dict(self) -> dict:
         return {

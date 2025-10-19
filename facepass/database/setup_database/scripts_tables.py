@@ -67,7 +67,10 @@ def create_database():
             registro_acesso_id INT,
             data_hora TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             tipo_notificacao VARCHAR(100),
-            mensagem TEXT
+            mensagem TEXT,
+            lida BOOLEAN DEFAULT FALSE,
+            FOREIGN KEY (gestor_id) REFERENCES gestor(id),
+            FOREIGN KEY (registro_acesso_id) REFERENCES registroAcesso(id
         )
     """)
     conn.commit()

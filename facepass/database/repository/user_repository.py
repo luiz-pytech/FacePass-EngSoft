@@ -13,7 +13,7 @@ class UsuarioRepository:
         self.connection = connection
         self.executor = QueryExecutor(self.connection)
 
-    def save_user(self, usuario: Usuario) -> None:
+    def save_user(self, usuario: Usuario) -> Usuario | None:
         query = """
             INSERT into usuarios (id, nome, email, cpf, data_cadastro, foto_reconhecimento, cargo, aprovado) VALUES
             (%s, %s, %s, %s, %s, %s, %s, %s);
@@ -21,6 +21,8 @@ class UsuarioRepository:
         params = (usuario.id, usuario.nome, usuario.email, usuario.cpf,
                   usuario.data_cadastro, usuario.foto_reconhecimento, usuario.cargo, usuario.aprovado)
         self.executor.execute_insert(query, params)
+
+        return usuario
 
     def get_user_by_id(self, user_id: int):
         query = """
