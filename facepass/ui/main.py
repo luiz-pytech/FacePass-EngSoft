@@ -1,13 +1,16 @@
 import streamlit as st
-from facepass.ui.ui_pages import notifications, approve_registration, registers, facial_recognition, user_registration
+from facepass.ui.ui_pages import notifications, approve_registration, registers, facial_recognition, user_registration, manager_login
 from facepass.database.setup_database.connection import DatabaseConnection
 from facepass.services.user_service import UsuarioService
 from facepass.services.notification_service import NotificationService
-from facepass.services.validator_service import ValidatorService
 from facepass.services.access_service import AccessService
 from facepass.database.repository.user_repository import UsuarioRepository
 from facepass.database.repository.notification_repository import NotificationRepository
 from facepass.database.repository.register_repository import RegistroRepository
+from facepass.database.repository.manager_repository import ManagerRepository
+from facepass.controllers.user_controller import UserController
+from facepass.controllers.manager_controller import ManagerController
+from facepass.services.manager_service import ManagerService
 import os
 from dotenv import load_dotenv
 
@@ -21,20 +24,42 @@ def sidebar():
 
     st.sidebar.info("Sistema de Controle de Acesso por Reconhecimento Facial")
 
+    # Verificar se gestor está autenticado
+    manager_authenticated = st.session_state.get('manager_authenticated', False)
+
+    # Mostrar status de autenticação
+    if manager_authenticated:
+        manager_name = st.session_state.get('manager_name', 'Gestor')
+        st.sidebar.success(f"✅ **{manager_name}**")
+
     st.sidebar.markdown("---")
     st.sidebar.subheader("📍 Navegação")
+
+    # Páginas públicas (sempre visíveis)
+    public_pages = [
+        "🏠 Início",
+        "📝 Cadastro de Usuário",
+        "🔐 Reconhecimento Facial",
+        "👨‍💼 Login de Gestor"
+    ]
+
+    # Páginas restritas (apenas para gestores autenticados)
+    restricted_pages = [
+        "👤 Gestão de Cadastros",
+        "📜 Relatórios de Acesso",
+        "🔔 Notificações"
+    ]
+
+    # Determinar quais páginas mostrar
+    if manager_authenticated:
+        available_pages = public_pages + restricted_pages
+    else:
+        available_pages = public_pages
 
     # Opções de navegação
     page = st.sidebar.radio(
         "Ir para:",
-        [
-            "🏠 Início",
-            "📝 Cadastro de Usuário",
-            "🔐 Reconhecimento Facial",
-            "👤 Gestão de Cadastros",
-            "📜 Relatórios de Acesso",
-            "🔔 Notificações"
-        ],
+        available_pages,
         label_visibility="collapsed"
     )
 
@@ -155,25 +180,28 @@ def home_page():
     col_stat1, col_stat2, col_stat3 = st.columns(3)
     col_stat4, col_stat5, col_stat6 = st.columns(3)
 
+    # Obter estatísticas do session_state
+    stats = st.session_state.get('user_stats', {})
+
     with col_stat1:
-        st.metric("👥 Usuários Cadastrados", st.session_state.get('usuarios_cadastrados', 0),
+        st.metric("👥 Usuários Cadastrados", stats.get('total_users', 0),
                   help="Total de usuários no sistema")
 
     with col_stat2:
-        st.metric("✅ Usuários Aprovados", st.session_state.get('usuarios_aprovados', 0),
+        st.metric("✅ Usuários Aprovados", stats.get('approved_users', 0),
                   help="Usuários com acesso liberado")
 
     with col_stat3:
-        st.metric("❌ Usuários Reprovados", st.session_state.get('usuarios_reprovados', 0),
-                  help="Usuários com acesso negado")
+        st.metric("❌ Usuários Pendentes", stats.get('pending_users', 0),
+                  help="Usuários aguardando aprovação")
 
     with col_stat4:
         st.metric("📊 Acessos Totais", len(st.session_state.get('acessos_registrados', [])),
                   help="Total de tentativas de acesso")
 
     with col_stat5:
-        st.metric("📈 Taxa de Sucesso", f"{st.session_state.get('taxa_sucesso', 0.0):.2f}%",
-                  help="Percentual de acessos permitidos")
+        st.metric("📈 Taxa de usuários aprovados", f"{stats.get('approval_rate', 0.0):.2f}%",
+                  help="Percentual de usuários aprovados")
     with col_stat6:
         st.metric("🔔 Notificações", len(st.session_state.get('notificacoes', [])),
                   help="Total de notificações geradas")
@@ -195,25 +223,6 @@ def home_page():
 def init_services():
     """Inicializa os serviços necessários"""
 
-    # Inicializar variáveis de dados primeiro
-    if 'usuarios_cadastrados' not in st.session_state:
-        st.session_state['usuarios_cadastrados'] = []
-
-    if 'usuarios_aprovados' not in st.session_state:
-        st.session_state['usuarios_aprovados'] = []
-
-    if 'usuarios_pendentes' not in st.session_state:
-        st.session_state['usuarios_pendentes'] = []
-
-    if 'acessos_registrados' not in st.session_state:
-        st.session_state['acessos_registrados'] = []
-
-    if 'taxa_sucesso' not in st.session_state:
-        st.session_state['taxa_sucesso'] = 0.0
-
-    if 'notificacoes' not in st.session_state:
-        st.session_state['notificacoes'] = []
-
     # Tentar estabelecer conexão com banco de dados
     if 'db_connection' not in st.session_state:
         try:
@@ -234,6 +243,7 @@ def init_services():
             usuario_repository = UsuarioRepository(connection)
             notification_repository = NotificationRepository(connection)
             access_repository = RegistroRepository(connection)
+            manager_repository = ManagerRepository(connection)
 
             # Inicializar serviços
             user_service = UsuarioService(
@@ -242,23 +252,39 @@ def init_services():
                 notification_repository)
             access_service = AccessService(
                 access_repository, notification_repository, usuario_repository)
+            manager_service = ManagerService(manager_repository)
+
+            # Inicializar controladores
+            user_controller = UserController(user_service)
+            manager_controller = ManagerController(manager_service)
 
             # Armazenar no session_state
             st.session_state['usuario_repository'] = usuario_repository
             st.session_state['notification_repository'] = notification_repository
             st.session_state['access_repository'] = access_repository
+            st.session_state['manager_repository'] = manager_repository
+
             st.session_state['user_service'] = user_service
             st.session_state['notification_service'] = notification_service
             st.session_state['access_service'] = access_service
+            st.session_state['manager_service'] = manager_service
+
+            st.session_state['user_controller'] = user_controller
+            st.session_state['manager_controller'] = manager_controller
+
+            # Carregar estatísticas dos usuários
+            stats_result = user_controller.get_stats()
+            if stats_result['success']:
+                st.session_state['user_stats'] = stats_result['data']
+            else:
+                st.session_state['user_stats'] = {
+                    'total_users': 0,
+                    'approved_users': 0,
+                    'pending_users': 0,
+                    'approval_rate': 0.0
+                }
 
             st.success("✅ Conexão com banco de dados estabelecida!")
-
-            st.session_state.usuarios_cadastrados = st.session_state.user_service.get_statistics()[
-                'total']
-            st.session_state.usuarios_aprovados = st.session_state.user_service.get_statistics()[
-                'approved']
-            st.session_state.usuarios_pendentes = st.session_state.user_service.get_statistics()[
-                'pending']
 
             st.session_state.acessos_registrados = st.session_state.access_service.list_all_access_records(
             ) if st.session_state.get('access_service') else []
@@ -297,6 +323,8 @@ def main():
         user_registration.app()
     elif page == "🔐 Reconhecimento Facial":
         facial_recognition.app()
+    elif page == "👨‍💼 Login de Gestor":
+        manager_login.app()
     elif page == "👤 Gestão de Cadastros":
         approve_registration.app()
     elif page == "📜 Relatórios de Acesso":
@@ -316,3 +344,5 @@ def clean_db_services():
             st.session_state['user_service'] = None
             st.session_state['notification_service'] = None
             st.session_state['access_service'] = None
+            st.session_state['manager_service'] = None
+            st.session_state['manager_repository'] = None

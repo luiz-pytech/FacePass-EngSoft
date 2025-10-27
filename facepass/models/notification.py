@@ -1,13 +1,14 @@
 from datetime import datetime
+from typing import Optional
 
 
 class Notificacao:
     """Model class representing a notification in the FacePass system."""
 
-    def __init__(self, id: int, manager_id: int, access_register_id: int, created_at: datetime, type_notification: str, message: str, is_read: bool = False):
+    def __init__(self, id: int, manager_id: int, access_register_id: Optional[int], created_at: datetime, type_notification: str, message: str, is_read: bool = False):
         self.id: int = id
         self.manager_id: int = manager_id
-        self.access_register_id: int = access_register_id
+        self.access_register_id: Optional[int] = access_register_id
         self.created_at: datetime = created_at
         self.type_notification: str = type_notification
         self.message: str = message

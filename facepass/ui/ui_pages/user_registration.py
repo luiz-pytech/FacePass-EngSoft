@@ -1,10 +1,14 @@
 import streamlit as st
 from datetime import datetime
-import re
+from facepass.controllers.user_controller import UserController
+import os
+from dotenv import load_dotenv
+
+load_dotenv()
 
 
 def app():
-    """Página de Cadastro de Usuário - US1"""
+    """Página de Cadastro de Usuário"""
     st.title("📝 Cadastro de Novo Usuário")
     st.markdown("---")
 
@@ -26,7 +30,7 @@ def app():
         col1, col2 = st.columns(2)
 
         with col1:
-            nome = st.text_input(
+            name = st.text_input(
                 "Nome Completo *",
                 placeholder="Ex: João Silva Santos",
                 help="Digite seu nome completo"
@@ -42,13 +46,17 @@ def app():
             cpf = st.text_input(
                 "CPF *",
                 placeholder="Ex: 123.456.789-00",
-                help="CPF sem pontos ou traços",
+                help="CPF no formato 000.000.000-00 ou 00000000000",
                 max_chars=14
             )
 
-            cargo = st.text_input(
+            position = st.selectbox(
                 "Cargo/Função *",
-                placeholder="Ex: Desenvolvedor, Analista, Gerente",
+                options=[
+                    "Desenvolvedor",
+                    "Analista de Dados",
+                    "Gerente",
+                ],
                 help="Seu cargo ou função na organização"
             )
 
@@ -66,7 +74,8 @@ def app():
         """)
 
         # Tabs para escolher método de captura
-        tab_cam, tab_file = st.tabs(["📷 Capturar da Webcam", "📁 Upload de Arquivo"])
+        tab_cam, tab_file = st.tabs(
+            ["📷 Capturar da Webcam", "📁 Upload de Arquivo"])
 
         foto_bytes = None
 
@@ -125,54 +134,25 @@ def app():
 
         # ==================== VALIDAÇÃO E PROCESSAMENTO ====================
         if submit_button:
-            # Lista de erros
-            erros = []
+            user_controller = st.session_state.get("user_controller")
 
-            # Validar campos obrigatórios
-            if not nome or len(nome.strip()) < 3:
-                erros.append("❌ Nome completo é obrigatório (mínimo 3 caracteres)")
+            if not user_controller:
+                st.error("❌ Erro interno: controlador de usuário não encontrado.")
+                return
 
-            if not email or not validar_email(email):
-                erros.append("❌ Email inválido")
+            result = user_controller.create_user(
+                name=name,
+                email=email,
+                cpf=cpf,
+                position=position,
+                photo=foto_bytes,
+                terms_accepted=aceita_termos
+            )
+            with st.spinner("📤 Enviando seu cadastro..."):
 
-            if not cpf or not validar_cpf(cpf):
-                erros.append("❌ CPF inválido")
-
-            if not cargo or len(cargo.strip()) < 2:
-                erros.append("❌ Cargo/Função é obrigatório")
-
-            if not foto_bytes:
-                erros.append("❌ Foto para reconhecimento facial é obrigatória")
-
-            if not aceita_termos:
-                erros.append("❌ Você deve aceitar os termos e condições")
-
-            # Exibir erros ou processar cadastro
-            if erros:
-                for erro in erros:
-                    st.error(erro)
-            else:
-                # Processar cadastro
-                with st.spinner("📤 Enviando seu cadastro..."):
-                    try:
-                        # Criar objeto Usuario
-                        # usuario = Usuario(
-                        #     id=0,
-                        #     nome=nome.strip(),
-                        #     email=email.strip().lower(),
-                        #     cpf=limpar_cpf(cpf),
-                        #     foto_reconhecimento=foto_bytes,
-                        #     cargo=cargo.strip(),
-                        #     aprovado=False
-                        # )
-
-                        # Salvar no banco via serviço
-                        # usuario_service.create_user(usuario)
-
-                        # Mock - simular sucesso
-                        st.success("""
-                            ✅ **Cadastro enviado com sucesso!**
-
+                if result['success']:
+                    st.success(result['message'])
+                    st.success("""
                             Seus dados foram registrados e estão aguardando aprovação do gestor.
                             Você receberá uma notificação quando seu cadastro for aprovado.
 
@@ -181,59 +161,57 @@ def app():
                             2. Você será notificado por email
                             3. Após aprovação, já poderá utilizar o sistema de acesso
                         """)
+                    st.balloons()
 
-                        st.balloons()
-
-                        # Exibir resumo do cadastro
-                        with st.expander("📋 Resumo do Cadastro Enviado"):
-                            st.markdown(f"""
-                                **Nome:** {nome}
-                                **Email:** {email}
-                                **CPF:** {cpf}
-                                **Cargo:** {cargo}
-                                **Status:** ⏳ Aguardando Aprovação
-                                **Data de Cadastro:** {datetime.now().strftime('%d/%m/%Y %H:%M:%S')}
-                            """)
-
-                    except Exception as e:
-                        st.error(f"❌ Erro ao processar cadastro: {str(e)}")
-                        st.error("Por favor, tente novamente ou entre em contato com o suporte.")
+                    with st.expander("📋 Resumo do Cadastro"):
+                        usuario = result['data']
+                        st.markdown(f"""
+                            **Nome:** {usuario.name}
+                            **Email:** {usuario.email}
+                            **Cargo:** {usuario.position}
+                            **Status:** ⏳ Aguardando Aprovação
+                            **Data de Cadastro:** {usuario.created_at.strftime('%d/%m/%Y %H:%M:%S')}
+                        """)
+                else:
+                    st.error(result['message'])
+                    for error in result['errors']:
+                        st.error(f"❌ {error}")
 
         if clear_button:
             st.info("🔄 Formulário limpo! Preencha novamente se necessário.")
             st.rerun()
 
-    # ==================== DICAS E INFORMAÇÕES ====================
-    st.markdown("---")
-    st.subheader("💡 Dicas para um Cadastro Bem-Sucedido")
+        # ==================== DICAS E INFORMAÇÕES ====================
+        st.markdown("---")
+        st.subheader("💡 Dicas para um Cadastro Bem-Sucedido")
 
-    col_dica1, col_dica2, col_dica3 = st.columns(3)
+        col_dica1, col_dica2, col_dica3 = st.columns(3)
 
-    with col_dica1:
-        st.markdown("""
-            **📸 Foto de Qualidade**
-            - Fundo neutro
-            - Boa iluminação
-            - Rosto centralizado
-            - Expressão neutra
-        """)
+        with col_dica1:
+            st.markdown("""
+                **📸 Foto de Qualidade**
+                - Fundo neutro
+                - Boa iluminação
+                - Rosto centralizado
+                - Expressão neutra
+            """)
 
-    with col_dica2:
-        st.markdown("""
-            **📝 Dados Corretos**
-            - Use seu nome completo
-            - Email válido e ativo
-            - CPF sem erros
-            - Cargo real
-        """)
+        with col_dica2:
+            st.markdown("""
+                **📝 Dados Corretos**
+                - Use seu nome completo
+                - Email válido e ativo
+                - CPF sem erros
+                - Cargo real
+            """)
 
-    with col_dica3:
-        st.markdown("""
-            **⏱️ Tempo de Aprovação**
-            - Análise em até 24h
-            - Notificação por email
-            - Acesso liberado após aprovação
-        """)
+        with col_dica3:
+            st.markdown("""
+                **⏱️ Tempo de Aprovação**
+                - Análise em até 24h
+                - Notificação por email
+                - Acesso liberado após aprovação
+            """)
 
     # ==================== STATUS DO CADASTRO (CONSULTA) ====================
     st.markdown("---")
@@ -246,12 +224,12 @@ def app():
             key="email_consulta"
         )
 
-        if st.button("🔍 Consultar", key="btn_consultar"):
-            if email_consulta:
-                # Mock - substituir por consulta real
-                # status = usuario_service.get_user_status_by_email(email_consulta)
+    if st.button("🔍 Consultar", key="btn_consultar"):
+        if email_consulta:
+            # Mock - substituir por consulta real
+            # status = usuario_service.get_user_status_by_email(email_consulta)
 
-                st.info(f"""
+            st.info(f"""
                     **Status do Cadastro:**
                     - Email: {email_consulta}
                     - Status: ⏳ Aguardando Aprovação
@@ -259,32 +237,5 @@ def app():
 
                     💡 Seu cadastro está em análise. Aguarde a aprovação do gestor.
                 """)
-            else:
-                st.warning("⚠️ Por favor, digite um email válido.")
-
-
-def validar_email(email):
-    """Valida formato de email"""
-    padrao = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
-    return re.match(padrao, email) is not None
-
-
-def validar_cpf(cpf):
-    """Valida formato básico de CPF"""
-    # Remove caracteres não numéricos
-    cpf_limpo = re.sub(r'\D', '', cpf)
-
-    # Verifica se tem 11 dígitos
-    if len(cpf_limpo) != 11:
-        return False
-
-    # Verifica se não é sequência repetida (ex: 111.111.111-11)
-    if cpf_limpo == cpf_limpo[0] * 11:
-        return False
-
-    return True
-
-
-def limpar_cpf(cpf):
-    """Remove formatação do CPF"""
-    return re.sub(r'\D', '', cpf)
+        else:
+            st.warning("⚠️ Por favor, digite um email válido.")

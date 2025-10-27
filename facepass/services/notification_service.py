@@ -40,7 +40,7 @@ class NotificationService:
         notificacao = Notificacao(
             id=0,
             manager_id=manager_id,
-            access_register_id=0,
+            access_register_id=None,
             created_at=datetime.now(),
             type_notification="new_user_pending",
             message=message,
