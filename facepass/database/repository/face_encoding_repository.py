@@ -18,9 +18,6 @@ class FaceEncodingRepository:
 
         params = (face_encoding.user_id, face_encoding.to_bytes())
 
-        # Teste para ver o tipo do encoding antes de salvar
-        print("\nO tipo do encoding: ", type(face_encoding.to_bytes()), "\n")
-
         encoding_id = self.executor.execute_insert(query, params)
         face_encoding.id = encoding_id
 

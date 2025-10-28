@@ -10,6 +10,7 @@ from facepass.database.repository.user_repository import UsuarioRepository
 from facepass.database.repository.notification_repository import NotificationRepository
 from facepass.database.repository.register_repository import RegistroRepository
 from facepass.database.repository.face_encoding_repository import FaceEncodingRepository
+from facepass.controllers.face_recognition_controller import FaceRecognitionController
 import os
 from dotenv import load_dotenv
 
@@ -248,6 +249,10 @@ def init_services():
             face_recognition_service = FaceRecognitionService(
                 face_encoding_repository)
 
+            # Inicializar controllers
+            face_recognition_controller = FaceRecognitionController(
+                face_recognition_service, user_service, access_service)
+
             # Armazenar no session_state
             st.session_state['usuario_repository'] = usuario_repository
             st.session_state['notification_repository'] = notification_repository
@@ -257,6 +262,7 @@ def init_services():
             st.session_state['notification_service'] = notification_service
             st.session_state['access_service'] = access_service
             st.session_state['face_recognition_service'] = face_recognition_service
+            st.session_state['face_recognition_controller'] = face_recognition_controller
 
             st.success("✅ Conexão com banco de dados estabelecida!")
 

@@ -2,7 +2,6 @@ import streamlit as st
 from datetime import datetime
 from facepass.models.user import Usuario
 from facepass.services.user_service import UsuarioService
-from facepass.services.face_recognition_service import FaceRecognitionService
 
 
 def app():
@@ -17,7 +16,6 @@ def app():
     with tab1:
         st.subheader("Usuários Aguardando Aprovação")
 
-        face_recognition_service: FaceRecognitionService = st.session_state["face_recognition_service"]
         usuario_service: UsuarioService = st.session_state["user_service"]
         usuarios_pendentes = usuario_service.list_pending_approvals()
 
@@ -51,12 +49,25 @@ def app():
 
                     with col_btn1:
                         if st.button("✅ Aprovar", key=f"aprovar_{user.id}"):
+                            # Obter controller do session_state
+                            face_recognition_controller = st.session_state.get('face_recognition_controller')
+
+                            # Aprovar usuário
                             usuario_service.approve_user(user.id)
 
-                            # Cadastra um encoding do usuário na tabela de encodings do BD
-                            face_recognition_service.save_user_face(user.id, user.photo_recognition )
+                            # Cadastrar encoding facial através do controller
+                            if face_recognition_controller:
+                                encoding_result = face_recognition_controller.save_user_face_encoding(
+                                    user.id, user.photo_recognition
+                                )
 
-                            st.success(f"Usuário {user.name} aprovado com sucesso!")
+                                if not encoding_result['success']:
+                                    st.warning(f"⚠️ Usuário aprovado, mas houve erro ao salvar o encoding facial: {encoding_result['message']}")
+                                else:
+                                    st.success(f"Usuário {user.name} aprovado com sucesso!")
+                            else:
+                                st.warning(f"⚠️ Usuário aprovado, mas serviço de reconhecimento facial indisponível")
+
                             st.rerun()
 
                     with col_btn2:

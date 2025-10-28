@@ -168,10 +168,14 @@ def app():
                             email=email.strip().lower(),
                             cpf=limpar_cpf(cpf),
                             photo_recognition=foto_bytes,
+                            position=cargo.strip(),
+                            approved=False,
+                            created_at=datetime.now()
                         )
 
-                        
-                        usuario_service.create_user(usuario, 1)
+                        # Obter manager_id do session_state (se gestor logado) ou usar gestor padrão
+                        manager_id = st.session_state.get('manager_id', 1)
+                        usuario_service.create_user(usuario, manager_id)
 
                         # Mock - simular sucesso
                         st.success("""
