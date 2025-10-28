@@ -79,7 +79,7 @@ def app():
 
     # Aplicar filtro de "Lidas" se necessário
     if filter_type == "Lidas":
-        notifications = [n for n in notifications if n[6]]  # n[6] = is_read
+        notifications = [n for n in notifications if n['is_read']]
 
     if not notifications:
         st.info("📭 Nenhuma notificação no momento.")
@@ -88,15 +88,13 @@ def app():
             f"📬 **{len(notifications)} notificação(ões) encontrada(s)**")
 
         for notif in notifications:
-            # Desempacotar tupla do banco
-            # (id, manager_id, access_register_id, created_at, type_notification, message, is_read)
-            notif_id = notif[0]
-            # manager_id_notif = notif[1]
-            # access_register_id = notif[2]
-            created_at = notif[3]
-            type_notification = notif[4]
-            message = notif[5]
-            is_read = notif[6]
+            notif_id = notif['id']
+            # manager_id_notif = notif['manager_id']
+            # access_register_id = notif['access_register_id']
+            created_at = notif['created_at']
+            type_notification = notif['type_notification']
+            message = notif['message']
+            is_read = notif['is_read']
 
             # Determinar ícone e cor baseado no tipo
             if type_notification == "access_denied":

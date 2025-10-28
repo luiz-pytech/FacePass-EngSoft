@@ -104,7 +104,7 @@ class NotificationService:
             all_notifications = self.notification_repository.get_notifications_by_manager(
                 manager_id)
 
-            return [n for n in all_notifications if not n[6]]
+            return [n for n in all_notifications if not n['is_read']]
         return self.notification_repository.list_unread_notifications()
 
     def mark_as_read(self, notification_id: int) -> None:
