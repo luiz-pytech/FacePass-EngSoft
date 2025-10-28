@@ -63,8 +63,9 @@ class UsuarioRepository:
         self.executor.execute_update(query, params)
 
     def reject_user(self, user_id: int):
+        """Remove usuário rejeitado do sistema permanentemente"""
         query = """
-            UPDATE users SET approved = false WHERE id = %s
+            DELETE FROM users WHERE id = %s
         """
         params = (user_id,)
         self.executor.execute_update(query, params)

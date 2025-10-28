@@ -2,8 +2,12 @@ from typing import Optional, List, Tuple
 import io
 import face_recognition
 import numpy as np
+import logging
 from facepass.models.faceEncoding import FaceEncoding
 from facepass.database.repository.face_encoding_repository import FaceEncodingRepository
+
+# Configurar logger
+logger = logging.getLogger(__name__)
 
 
 class FaceRecognitionService:
@@ -45,7 +49,7 @@ class FaceRecognitionService:
             return face_encodings[0]  # Converter numpy array para list
             
         except Exception as e:
-            print(f"Erro ao gerar encoding facial: {str(e)}")
+            logger.error(f"Erro ao gerar encoding facial: {str(e)}", exc_info=True)
             return None
         
 

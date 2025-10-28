@@ -40,5 +40,10 @@ class Usuario:
         if "approved" in data:
             usuario.approved = bool(data.get("approved"))
         if "created_at" in data:
-            usuario.created_at = data.get("created_at")
+            # Converter string ISO para datetime se necessário
+            created_at_value = data.get("created_at")
+            if isinstance(created_at_value, str):
+                usuario.created_at = datetime.datetime.fromisoformat(created_at_value)
+            elif isinstance(created_at_value, datetime.datetime):
+                usuario.created_at = created_at_value
         return usuario
