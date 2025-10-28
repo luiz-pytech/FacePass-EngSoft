@@ -1,9 +1,15 @@
 import streamlit as st
 from datetime import datetime
+from facepass.models.user import Usuario
+from facepass.services.user_service import UsuarioService
+
 import re
 
 
 def app():
+    usuario_service: UsuarioService = st.session_state['user_service']
+
+
     """Página de Cadastro de Usuário - US1"""
     st.title("📝 Cadastro de Novo Usuário")
     st.markdown("---")
@@ -156,18 +162,16 @@ def app():
                 with st.spinner("📤 Enviando seu cadastro..."):
                     try:
                         # Criar objeto Usuario
-                        # usuario = Usuario(
-                        #     id=0,
-                        #     nome=nome.strip(),
-                        #     email=email.strip().lower(),
-                        #     cpf=limpar_cpf(cpf),
-                        #     foto_reconhecimento=foto_bytes,
-                        #     cargo=cargo.strip(),
-                        #     aprovado=False
-                        # )
+                        usuario = Usuario(
+                            id=0,
+                            name=nome.strip(),
+                            email=email.strip().lower(),
+                            cpf=limpar_cpf(cpf),
+                            photo_recognition=foto_bytes,
+                        )
 
-                        # Salvar no banco via serviço
-                        # usuario_service.create_user(usuario)
+                        
+                        usuario_service.create_user(usuario, 1)
 
                         # Mock - simular sucesso
                         st.success("""
@@ -249,7 +253,7 @@ def app():
         if st.button("🔍 Consultar", key="btn_consultar"):
             if email_consulta:
                 # Mock - substituir por consulta real
-                # status = usuario_service.get_user_status_by_email(email_consulta)
+                status = usuario_service.get_user_by_email(email_consulta)
 
                 st.info(f"""
                     **Status do Cadastro:**
