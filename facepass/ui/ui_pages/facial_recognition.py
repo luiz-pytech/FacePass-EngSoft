@@ -1,9 +1,5 @@
 import streamlit as st
 from datetime import datetime
-import time
-from facepass.services.face_recognition_service import FaceRecognitionService
-from facepass.services.user_service import UsuarioService
-from facepass.models.user import Usuario
 
 
 def app():
@@ -65,42 +61,33 @@ def app():
     # ==================== PROCESSAMENTO ====================
     if btn_access and captured_image:
         st.session_state['processing'] = True
-        
-        # Placeholder para spinner
-        with st.spinner("🔍 Processando reconhecimento facial..."):
-            result = {
-                'acesso_permitido': False,  # ou False
-                'usuario_nome': 'Unknown',
-                'usuario_cargo': 'Unknown',
-                'confianca': 0,
-                'motivo_negacao': None,  # ou "Usuário não reconhecido" / "Usuário não aprovado"
-                'data_hora': datetime.now(),
-                'local': 'Entrada Principal'
-            }
-            
-            # Checa se o rosto está cadastrado na tabela de encodings
-            face_recognition_service: FaceRecognitionService = st.session_state["face_recognition_service"]
-            face_indentify = face_recognition_service.identify_face(captured_image)
-            if face_indentify:
-                user_id, confidence = face_indentify
 
-                # Checa se o User_ID está cadastrado na tabela de usuários 
-                usuario_service: UsuarioService = st.session_state["user_service"]
-                user = usuario_service.get_user_by_id(user_id)
-                user = Usuario.from_dict(user)
-                if user:
-                    result = {
-                        'acesso_permitido': True,
-                        'usuario_nome': user.name,
-                        'usuario_cargo': user.position,
-                        'confianca': confidence,
-                        'motivo_negacao': None,
-                        'data_hora': datetime.now(),
-                        'local': 'Entrada Principal'
-                    }
+        # Obter controller e manager_id do session_state
+        face_recognition_controller = st.session_state.get('face_recognition_controller')
+        manager_id = st.session_state.get('manager_id', 1)  # Default: gestor padrão
 
-            st.session_state['access_result'] = result
+        if not face_recognition_controller:
+            st.error("❌ Erro: Serviço de reconhecimento facial indisponível.")
             st.session_state['processing'] = False
+        else:
+            # Processar reconhecimento facial através do controller
+            with st.spinner("🔍 Processando reconhecimento facial..."):
+                response = face_recognition_controller.process_access_attempt(
+                    image_bytes=captured_image,
+                    manager_id=manager_id,
+                    location='Entrada Principal'
+                )
+
+                if response['success']:
+                    st.session_state['access_result'] = response['data']
+                else:
+                    # Erro no processamento
+                    st.error(f"❌ {response['message']}")
+                    for error in response['errors']:
+                        st.error(f"• {error}")
+                    st.session_state['access_result'] = response['data']
+
+                st.session_state['processing'] = False
 
     # ==================== EXIBIÇÃO DE RESULTADO ====================
     if st.session_state.get('access_result'):
@@ -130,7 +117,7 @@ def app():
                     <p style="margin: 5px 0; font-size: 16px; opacity: 0.9;">{resultado['usuario_cargo']}</p>
                     <hr style="border: 1px solid rgba(255,255,255,0.3); margin: 20px 0;">
                     <p style="margin: 5px 0; font-size: 14px;">
-                        🎯 Confiança: {resultado['confianca']:.1f}%
+                        🎯 Confiança: {resultado['confianca']*100:.2f}%
                     </p>
                     <p style="margin: 5px 0; font-size: 14px;">
                         📅 {resultado['data_hora'].strftime('%d/%m/%Y %H:%M:%S')}
@@ -146,7 +133,7 @@ def app():
                 col_det1, col_det2 = st.columns(2)
 
                 with col_det1:
-                    st.metric("Nível de Confiança", f"{resultado['confianca']:.2f}%")
+                    st.metric("Nível de Confiança", f"{resultado['confianca']*100:.2f}%")
                     st.markdown(f"**Nome:** {resultado['usuario_nome']}")
 
                 with col_det2:
@@ -203,7 +190,7 @@ def app():
 
                 with col_det1:
                     if resultado.get('confianca'):
-                        st.metric("Nível de Confiança", f"{resultado['confianca']:.2f}%")
+                        st.metric("Nível de Confiança", f"{resultado['confianca']*100:.2f}%")
                     st.markdown(f"**Motivo:** {motivo}")
 
                 with col_det2:

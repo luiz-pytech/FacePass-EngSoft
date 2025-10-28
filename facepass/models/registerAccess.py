@@ -5,14 +5,14 @@ from typing import Optional
 class RegistroAcesso:
     """Model class representing an access register in the FacePass system."""
 
-    def __init__(self, id: int, user_id: int, created_at: datetime.datetime, type_access: str, access_allowed: bool):
+    def __init__(self, id: int, user_id: int, created_at: datetime.datetime, type_access: str, access_allowed: bool, reason_denied: Optional[str] = None, captured_image: Optional[bytes] = None):
         self.id: int = id
         self.user_id: int = user_id
         self.created_at: datetime.datetime = created_at
         self.type_access: str = type_access
         self.access_allowed: bool = access_allowed
-        self.reason_denied: Optional[str] = None
-        self.captured_image: Optional[bytes] = None
+        self.reason_denied: Optional[str] = reason_denied
+        self.captured_image: Optional[bytes] = captured_image
 
     def to_dict(self) -> dict:
         return {

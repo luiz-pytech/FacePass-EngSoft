@@ -9,20 +9,30 @@ class FaceEncodingRepository:
         self.executor = QueryExecutor(connection)
 
     def save_encoding(self, face_encoding: FaceEncoding) -> FaceEncoding:
-        """Armazena o encoding no Banco de Dados"""
+        """Armazena ou atualiza o encoding no Banco de Dados (previne duplicação)"""
 
-        query = """
-            INSERT INTO face_encoding (user_id, encoding)
-            VALUES (%s, %s);
-        """
+        # Verificar se já existe encoding para este usuário
+        existing = self.get_encoding_by_user_id(face_encoding.user_id)
 
-        params = (face_encoding.user_id, face_encoding.to_bytes())
-
-        # Teste para ver o tipo do encoding antes de salvar
-        print("\nO tipo do encoding: ", type(face_encoding.to_bytes()), "\n")
-
-        encoding_id = self.executor.execute_insert(query, params)
-        face_encoding.id = encoding_id
+        if existing:
+            # Atualizar encoding existente
+            query = """
+                UPDATE face_encoding
+                SET encoding = %s
+                WHERE user_id = %s
+            """
+            params = (face_encoding.to_bytes(), face_encoding.user_id)
+            self.executor.execute_update(query, params)
+            face_encoding.id = existing.id
+        else:
+            # Inserir novo encoding
+            query = """
+                INSERT INTO face_encoding (user_id, encoding)
+                VALUES (%s, %s);
+            """
+            params = (face_encoding.user_id, face_encoding.to_bytes())
+            encoding_id = self.executor.execute_insert(query, params)
+            face_encoding.id = encoding_id
 
         return face_encoding
     

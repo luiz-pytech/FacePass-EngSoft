@@ -1,14 +1,28 @@
+from PIL import Image
 import streamlit as st
-from datetime import datetime
+import io
 from facepass.models.user import Usuario
-from facepass.services.user_service import UsuarioService
-from facepass.services.face_recognition_service import FaceRecognitionService
+import time
 
 
 def app():
     """Página de Gestão de Cadastros - Aprovação de Usuários (US1)"""
     st.title("👤 Gestão de Cadastros")
     st.markdown("---")
+
+    # Verificar autenticação
+    if not st.session_state.get('manager_authenticated', False):
+        st.warning("⚠️ **Acesso Restrito**")
+        st.info(
+            "Esta página é exclusiva para gestores. Por favor, faça login primeiro.")
+        st.markdown("[👉 Ir para Login de Gestor](#)")
+        return
+
+    # Obter controller
+    user_controller = st.session_state.get('user_controller')
+    if not user_controller:
+        st.error("❌ Erro: Serviço de usuários indisponível.")
+        return
 
     # Tabs para organizar funcionalidades
     tab1, tab2 = st.tabs(["⏳ Pendentes de Aprovação", "👥 Todos os Usuários"])
@@ -17,16 +31,25 @@ def app():
     with tab1:
         st.subheader("Usuários Aguardando Aprovação")
 
-        face_recognition_service: FaceRecognitionService = st.session_state["face_recognition_service"]
-        usuario_service: UsuarioService = st.session_state["user_service"]
-        usuarios_pendentes = usuario_service.list_pending_approvals()
+        # Buscar usuários pendentes via controller
+        result = user_controller.list_pending_users()
 
-        # Transformando uma lista de 'dicts' em uma lista de Objetos 'Usuario'
-        usuarios_pendentes = [Usuario.from_dict(row) for row in usuarios_pendentes]
-        
+        if not result['success']:
+            st.error(f"❌ {result['message']}")
+            for error in result['errors']:
+                st.error(f"• {error}")
+            return
+
+        usuarios_pendentes = result['data']
+        usuarios_pendentes = [Usuario.from_dict(
+            user) for user in usuarios_pendentes]
+
         if not usuarios_pendentes:
             st.info("📭 Não há usuários pendentes de aprovação no momento.")
         else:
+            st.success(
+                f"📋 **{len(usuarios_pendentes)} usuário(s) aguardando aprovação**")
+
             for user in usuarios_pendentes:
                 with st.expander(f"📋 {user.name} - {user.email}"):
                     col1, col2 = st.columns([1, 2])
@@ -34,7 +57,13 @@ def app():
                     with col1:
                         # Exibir foto do usuário
                         if user.photo_recognition:
-                            st.image(user.photo_recognition, caption="Foto de Reconhecimento", width=200)
+                            try:
+                                image = Image.open(
+                                    io.BytesIO(user.photo_recognition))
+                                st.image(
+                                    image, caption="Foto de Reconhecimento", width=200)
+                            except Exception:
+                                st.warning("⚠️ Erro ao carregar foto")
                         else:
                             st.warning("Sem foto cadastrada")
 
@@ -44,78 +73,135 @@ def app():
                         st.markdown(f"**Email:** {user.email}")
                         st.markdown(f"**CPF:** {user.cpf}")
                         st.markdown(f"**Cargo:** {user.position}")
-                        st.markdown(f"**Data de Cadastro:** {user.created_at}")
+                        st.markdown(
+                            f"**Data de Cadastro:** {user.created_at.strftime('%d/%m/%Y %H:%M:%S')}")
+
+                    # Verificar se está em modo de confirmação de rejeição
+                    if st.session_state.get(f'confirm_reject_{user.id}'):
+                        st.warning(
+                            "⚠️ **Confirmação necessária:** Clique novamente em 'Rejeitar' para confirmar a exclusão deste usuário.")
 
                     # Botões de ação
                     col_btn1, col_btn2, col_btn3 = st.columns([1, 1, 4])
 
                     with col_btn1:
-                        if st.button("✅ Aprovar", key=f"aprovar_{user.id}"):
-                            usuario_service.approve_user(user.id)
+                        if st.button("✅ Aprovar", key=f"aprovar_{user.id}", use_container_width=True):
+                            with st.spinner("Processando aprovação..."):
+                                # Aprovar via controller
+                                approve_result = user_controller.approve_user(
+                                    user.id, approved=True)
 
-                            # Cadastra um encoding do usuário na tabela de encodings do BD
-                            face_recognition_service.save_user_face(user.id, user.photo_recognition )
+                                if approve_result['success']:
+                                    # Obter face_recognition_controller e cadastrar encoding facial
+                                    face_recognition_controller = st.session_state.get('face_recognition_controller')
 
-                            st.success(f"Usuário {user.name} aprovado com sucesso!")
-                            st.rerun()
+                                    if face_recognition_controller:
+                                        encoding_result = face_recognition_controller.save_user_face_encoding(
+                                            user.id, user.photo_recognition
+                                        )
+
+                                        if not encoding_result['success']:
+                                            st.warning(f"⚠️ Usuário aprovado, mas houve erro ao salvar o encoding facial: {encoding_result['message']}")
+                                        else:
+                                            st.success(f"✅ Usuário {user.name} aprovado com sucesso!")
+                                            st.balloons()
+                                    else:
+                                        st.warning(f"⚠️ Usuário aprovado, mas serviço de reconhecimento facial indisponível")
+                                        st.success(f"✅ Usuário {user.name} aprovado (sem reconhecimento facial)!")
+
+                                    time.sleep(2)
+                                    if f'confirm_reject_{user.id}' in st.session_state:
+                                        del st.session_state[f'confirm_reject_{user.id}']
+                                    st.rerun()
+                                else:
+                                    st.error(f"❌ {approve_result['message']}")
 
                     with col_btn2:
-                        if st.button("❌ Rejeitar", key=f"rejeitar_{user.id}"):
-                            usuario_service.reject_user(user.id)
-                            st.warning(f"Usuário {user.name} rejeitado.")
-                            st.rerun()
+                        if st.button("❌ Rejeitar", key=f"rejeitar_{user.id}", use_container_width=True):
+                            if st.session_state.get(f'confirm_reject_{user.id}'):
+                                with st.spinner("Processando rejeição..."):
+                                    reject_result = user_controller.approve_user(
+                                        user.id, approved=False, motivo="Rejeitado pelo gestor")
 
-    # ==================== TAB 2: TODOS OS USUÁRIOS ====================
+                                    if reject_result['success']:
+                                        st.success(
+                                            f"✅ Usuário {user.name} rejeitado.")
+                                        del st.session_state[f'confirm_reject_{user.id}']
+                                        time.sleep(1)
+                                        st.rerun()
+                                    else:
+                                        st.error(
+                                            f"❌ {reject_result['message']}")
+                            else:
+                                st.session_state[f'confirm_reject_{user.id}'] = True
+                                st.rerun()
+
+    # ==================== TODOS OS USUÁRIOS ====================
     with tab2:
         st.subheader("Gerenciar Todos os Usuários")
 
-        # Filtros
         col_filter1, col_filter2, col_filter3 = st.columns(3)
 
         with col_filter1:
-            filter_name = st.text_input("🔍 Filtrar por Nome", key="filter_name")
+            filter_name = st.text_input(
+                "🔍 Filtrar por Nome", key="filter_name")
 
         with col_filter2:
-            filter_status = st.selectbox("Status", ["Todos", "Aprovados", "Não Aprovados"], key="filter_status")
+            filter_status = st.selectbox(
+                "Status", ["Todos", "Aprovados", "Não Aprovados"], key="filter_status")
 
         with col_filter3:
-            filter_cargo = st.text_input("🔍 Filtrar por Cargo", key="filter_cargo")
+            filter_cargo = st.text_input(
+                "🔍 Filtrar por Cargo", key="filter_cargo")
 
         st.markdown("---")
 
-        # Mock data - substituir pela chamada ao serviço
-        todos_usuarios = []
-        todos_usuarios = usuario_service.list_all_users()
+        result = user_controller.list_all_users()
 
-        # Aplicar filtros (quando integrado com banco)
-        # if filter_name:
-        #     todos_usuarios = [u for u in todos_usuarios if filter_name.lower() in u['nome'].lower()]
-        # if filter_status != "Todos":
-        #     aprovado = filter_status == "Aprovados"
-        #     todos_usuarios = [u for u in todos_usuarios if u['aprovado'] == aprovado]
-        # if filter_cargo:
-        #     todos_usuarios = [u for u in todos_usuarios if filter_cargo.lower() in u['cargo'].lower()]
+        if not result['success']:
+            st.error(f"❌ {result['message']}")
+            for error in result['errors']:
+                st.error(f"• {error}")
+            return
+
+        todos_usuarios = result['data']
+
+        todos_usuarios = [Usuario.from_dict(
+            user) for user in todos_usuarios]
+
+        # Aplicar filtros
+        if filter_name:
+            todos_usuarios = [
+                u for u in todos_usuarios if filter_name.lower() in u.name.lower()]
+        if filter_status != "Todos":
+            aprovado = filter_status == "Aprovados"
+            todos_usuarios = [
+                u for u in todos_usuarios if u.approved == aprovado]
+        if filter_cargo:
+            todos_usuarios = [
+                u for u in todos_usuarios if filter_cargo.lower() in u.position.lower()]
 
         if not todos_usuarios:
             st.info("📭 Nenhum usuário encontrado.")
         else:
             # Tabela de usuários
-            st.markdown(f"**Total de usuários encontrados:** {len(todos_usuarios)}")
+            st.markdown(
+                f"**Total de usuários encontrados:** {len(todos_usuarios)}")
 
             for idx, user in enumerate(todos_usuarios):
                 with st.container():
                     col1, col2, col3, col4 = st.columns([3, 2, 2, 2])
 
                     with col1:
-                        status_icon = "✅" if user.get('aprovado') else "⏳"
-                        st.markdown(f"{status_icon} **{user.get('nome', 'N/A')}**")
-                        st.caption(f"{user.get('email', 'N/A')}")
+                        status_icon = "✅" if user.approved else "⏳"
+                        st.markdown(f"{status_icon} **{user.name}**")
+                        st.caption(f"{user.email}")
 
                     with col2:
-                        st.markdown(f"**Cargo:** {user.get('cargo', 'N/A')}")
+                        st.markdown(f"**Cargo:** {user.position}")
 
                     with col3:
-                        status_text = "Aprovado" if user.get('aprovado') else "Pendente"
+                        status_text = "Aprovado" if user.approved else "Pendente"
                         st.markdown(f"**Status:** {status_text}")
 
                     with col4:
@@ -123,42 +209,80 @@ def app():
 
                         with col_edit:
                             if st.button("✏️", key=f"edit_{idx}", help="Editar usuário"):
-                                st.session_state[f'editing_{user.get("id")}'] = True
+                                st.session_state[f'editing_{user.id}'] = True
+                                st.rerun()
 
                         with col_delete:
                             if st.button("🗑️", key=f"delete_{idx}", help="Remover usuário"):
-                                if st.session_state.get(f'confirm_delete_{user.get("id")}'):
-                                    # Chamar usuario_service.remove_user(user['id'])
-                                    st.success(f"Usuário {user.get('nome')} removido.")
-                                    st.rerun()
-                                else:
-                                    st.session_state[f'confirm_delete_{user.get("id")}'] = True
-                                    st.warning("⚠️ Clique novamente para confirmar exclusão")
+                                if st.session_state.get(f'confirm_delete_{user.id}'):
+                                    # Confirmar e remover
+                                    with st.spinner("Removendo usuário..."):
+                                        delete_result = user_controller.remove_user(
+                                            user.id)
 
-                    # Modal de edição (se ativado)
-                    if st.session_state.get(f'editing_{user.get("id")}'):
-                        with st.form(key=f"edit_form_{user.get('id')}"):
+                                        if delete_result['success']:
+                                            st.success(
+                                                f"✅ Usuário {user.name} removido.")
+                                            st.session_state[f'confirm_delete_{user.id}'] = False
+                                            st.rerun()
+                                        else:
+                                            st.error(
+                                                f"❌ {delete_result['message']}")
+                                else:
+                                    st.session_state[f'confirm_delete_{user.id}'] = True
+                                    st.warning(
+                                        "⚠️ Clique novamente para confirmar exclusão")
+
+                    if st.session_state.get(f'editing_{user.id}'):
+                        with st.form(key=f"edit_form_{user.id}"):
                             st.markdown("### ✏️ Editar Usuário")
 
-                            edit_nome = st.text_input("Nome", value=user.get('nome', ''))
-                            edit_email = st.text_input("Email", value=user.get('email', ''))
-                            edit_cargo = st.text_input("Cargo", value=user.get('cargo', ''))
-                            edit_aprovado = st.checkbox("Aprovado", value=user.get('aprovado', False))
+                            edit_nome = st.text_input("Nome", value=user.name)
+                            edit_email = st.text_input(
+                                "Email", value=user.email)
+                            edit_cpf = st.text_input("CPF", value=user.cpf)
+                            edit_cargo = st.selectbox(
+                                "Cargo",
+                                options=["Desenvolvedor",
+                                         "Analista de Dados", "Gerente"],
+                                index=["Desenvolvedor", "Analista de Dados", "Gerente"].index(
+                                    user.position) if user.position in ["Desenvolvedor", "Analista de Dados", "Gerente"] else 0
+                            )
+                            edit_aprovado = st.checkbox(
+                                "Aprovado", value=user.approved)
 
                             col_save, col_cancel = st.columns(2)
 
                             with col_save:
-                                submitted = st.form_submit_button("💾 Salvar")
+                                submitted = st.form_submit_button(
+                                    "💾 Salvar", use_container_width=True)
                                 if submitted:
-                                    # Atualizar usuário via usuario_service.update_user()
-                                    st.success("Usuário atualizado com sucesso!")
-                                    st.session_state[f'editing_{user.get("id")}'] = False
-                                    st.rerun()
+                                    with st.spinner("Salvando alterações..."):
+                                        update_result = user_controller.update_user(
+                                            user_id=user.id,
+                                            name=edit_nome,
+                                            email=edit_email,
+                                            cpf=edit_cpf,
+                                            position=edit_cargo,
+                                            approved=edit_aprovado
+                                        )
+
+                                        if update_result['success']:
+                                            st.success(
+                                                "✅ Usuário atualizado com sucesso!")
+                                            st.session_state[f'editing_{user.id}'] = False
+                                            st.rerun()
+                                        else:
+                                            st.error(
+                                                f"❌ {update_result['message']}")
+                                            for error in update_result['errors']:
+                                                st.error(f"• {error}")
 
                             with col_cancel:
-                                cancelled = st.form_submit_button("❌ Cancelar")
+                                cancelled = st.form_submit_button(
+                                    "❌ Cancelar", use_container_width=True)
                                 if cancelled:
-                                    st.session_state[f'editing_{user.get("id")}'] = False
+                                    st.session_state[f'editing_{user.id}'] = False
                                     st.rerun()
 
                     st.markdown("---")

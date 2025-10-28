@@ -110,7 +110,7 @@ class AccessService:
             return 0.0
 
         total_attempts = len(all_records)
-        successful_attempts = sum(1 for record in all_records if record[4])
+        successful_attempts = sum(1 for record in all_records if record['access_allowed'])
 
         success_rate = (successful_attempts / total_attempts) * 100
         return success_rate
@@ -168,8 +168,8 @@ class AccessService:
                 'taxa_sucesso': 0.0
             }
 
-        # Assumindo que access_allowed está na posição 4 do resultado
-        permitidos = sum(1 for record in records if record[4])
+        # QueryExecutor retorna dicionários
+        permitidos = sum(1 for record in records if record['access_allowed'])
         negados = total - permitidos
         taxa_sucesso = (permitidos / total) * 100
 
