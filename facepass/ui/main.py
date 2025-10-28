@@ -5,11 +5,9 @@ from facepass.services.user_service import UsuarioService
 from facepass.services.notification_service import NotificationService
 from facepass.services.validator_service import ValidatorService
 from facepass.services.access_service import AccessService
-from facepass.services.face_recognition_service import FaceRecognitionService
 from facepass.database.repository.user_repository import UsuarioRepository
 from facepass.database.repository.notification_repository import NotificationRepository
 from facepass.database.repository.register_repository import RegistroRepository
-from facepass.database.repository.face_encoding_repository import FaceEncodingRepository
 import os
 from dotenv import load_dotenv
 
@@ -236,7 +234,6 @@ def init_services():
             usuario_repository = UsuarioRepository(connection)
             notification_repository = NotificationRepository(connection)
             access_repository = RegistroRepository(connection)
-            face_encoding_repository = FaceEncodingRepository(connection)
 
             # Inicializar serviços
             user_service = UsuarioService(
@@ -245,18 +242,14 @@ def init_services():
                 notification_repository)
             access_service = AccessService(
                 access_repository, notification_repository, usuario_repository)
-            face_recognition_service = FaceRecognitionService(
-                face_encoding_repository)
 
             # Armazenar no session_state
             st.session_state['usuario_repository'] = usuario_repository
             st.session_state['notification_repository'] = notification_repository
             st.session_state['access_repository'] = access_repository
-            st.session_state['face_encoding_repository'] = face_encoding_repository
             st.session_state['user_service'] = user_service
             st.session_state['notification_service'] = notification_service
             st.session_state['access_service'] = access_service
-            st.session_state['face_recognition_service'] = face_recognition_service
 
             st.success("✅ Conexão com banco de dados estabelecida!")
 

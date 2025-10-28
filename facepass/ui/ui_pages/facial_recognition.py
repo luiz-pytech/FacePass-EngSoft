@@ -1,9 +1,6 @@
 import streamlit as st
 from datetime import datetime
 import time
-from facepass.services.face_recognition_service import FaceRecognitionService
-from facepass.services.user_service import UsuarioService
-from facepass.models.user import Usuario
 
 
 def app():
@@ -65,41 +62,27 @@ def app():
     # ==================== PROCESSAMENTO ====================
     if btn_access and captured_image:
         st.session_state['processing'] = True
-        
+
         # Placeholder para spinner
         with st.spinner("🔍 Processando reconhecimento facial..."):
-            result = {
-                'acesso_permitido': False,  # ou False
-                'usuario_nome': 'Unknown',
-                'usuario_cargo': 'Unknown',
-                'confianca': 0,
+            # Simular processamento (substituir por chamada real ao serviço)
+            time.sleep(2)
+
+            # Mock result - substituir por chamada ao serviço
+            # resultado = acesso_service.processar_tentativa_acesso(captured_image)
+
+            # Simular resultado (para teste)
+            mock_result = {
+                'acesso_permitido': True,  # ou False
+                'usuario_nome': 'João Silva',
+                'usuario_cargo': 'Desenvolvedor',
+                'confianca': 95.8,
                 'motivo_negacao': None,  # ou "Usuário não reconhecido" / "Usuário não aprovado"
                 'data_hora': datetime.now(),
                 'local': 'Entrada Principal'
             }
-            
-            # Checa se o rosto está cadastrado na tabela de encodings
-            face_recognition_service: FaceRecognitionService = st.session_state["face_recognition_service"]
-            face_indentify = face_recognition_service.identify_face(captured_image)
-            if face_indentify:
-                user_id, confidence = face_indentify
 
-                # Checa se o User_ID está cadastrado na tabela de usuários 
-                usuario_service: UsuarioService = st.session_state["user_service"]
-                user = usuario_service.get_user_by_id(user_id)
-                user = Usuario.from_dict(user)
-                if user:
-                    result = {
-                        'acesso_permitido': True,
-                        'usuario_nome': user.name,
-                        'usuario_cargo': user.position,
-                        'confianca': confidence,
-                        'motivo_negacao': None,
-                        'data_hora': datetime.now(),
-                        'local': 'Entrada Principal'
-                    }
-
-            st.session_state['access_result'] = result
+            st.session_state['access_result'] = mock_result
             st.session_state['processing'] = False
 
     # ==================== EXIBIÇÃO DE RESULTADO ====================

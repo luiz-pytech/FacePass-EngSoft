@@ -1,8 +1,5 @@
 import streamlit as st
 from datetime import datetime
-from facepass.models.user import Usuario
-from facepass.services.user_service import UsuarioService
-from facepass.services.face_recognition_service import FaceRecognitionService
 
 
 def app():
@@ -17,52 +14,45 @@ def app():
     with tab1:
         st.subheader("Usuários Aguardando Aprovação")
 
-        face_recognition_service: FaceRecognitionService = st.session_state["face_recognition_service"]
-        usuario_service: UsuarioService = st.session_state["user_service"]
-        usuarios_pendentes = usuario_service.list_pending_approvals()
+        # Mock data - substituir pela chamada ao serviço
+        usuarios_pendentes = []
+        # usuarios_pendentes = usuario_service.list_unapproved_users()
 
-        # Transformando uma lista de 'dicts' em uma lista de Objetos 'Usuario'
-        usuarios_pendentes = [Usuario.from_dict(row) for row in usuarios_pendentes]
-        
         if not usuarios_pendentes:
             st.info("📭 Não há usuários pendentes de aprovação no momento.")
         else:
             for user in usuarios_pendentes:
-                with st.expander(f"📋 {user.name} - {user.email}"):
+                with st.expander(f"📋 {user.get('nome', 'N/A')} - {user.get('email', 'N/A')}"):
                     col1, col2 = st.columns([1, 2])
 
                     with col1:
                         # Exibir foto do usuário
-                        if user.photo_recognition:
-                            st.image(user.photo_recognition, caption="Foto de Reconhecimento", width=200)
+                        if user.get('foto_reconhecimento'):
+                            st.image(user['foto_reconhecimento'], caption="Foto de Reconhecimento", width=200)
                         else:
                             st.warning("Sem foto cadastrada")
 
                     with col2:
                         # Informações do usuário
-                        st.markdown(f"**Nome:** {user.name}")
-                        st.markdown(f"**Email:** {user.email}")
-                        st.markdown(f"**CPF:** {user.cpf}")
-                        st.markdown(f"**Cargo:** {user.position}")
-                        st.markdown(f"**Data de Cadastro:** {user.created_at}")
+                        st.markdown(f"**Nome:** {user.get('nome', 'N/A')}")
+                        st.markdown(f"**Email:** {user.get('email', 'N/A')}")
+                        st.markdown(f"**CPF:** {user.get('cpf', 'N/A')}")
+                        st.markdown(f"**Cargo:** {user.get('cargo', 'N/A')}")
+                        st.markdown(f"**Data de Cadastro:** {user.get('data_cadastro', 'N/A')}")
 
                     # Botões de ação
                     col_btn1, col_btn2, col_btn3 = st.columns([1, 1, 4])
 
                     with col_btn1:
-                        if st.button("✅ Aprovar", key=f"aprovar_{user.id}"):
-                            usuario_service.approve_user(user.id)
-
-                            # Cadastra um encoding do usuário na tabela de encodings do BD
-                            face_recognition_service.save_user_face(user.id, user.photo_recognition )
-
-                            st.success(f"Usuário {user.name} aprovado com sucesso!")
+                        if st.button("✅ Aprovar", key=f"aprovar_{user.get('id')}"):
+                            # Chamar usuario_service.approve_user(user['id'])
+                            st.success(f"Usuário {user.get('nome')} aprovado com sucesso!")
                             st.rerun()
 
                     with col_btn2:
-                        if st.button("❌ Rejeitar", key=f"rejeitar_{user.id}"):
-                            usuario_service.reject_user(user.id)
-                            st.warning(f"Usuário {user.name} rejeitado.")
+                        if st.button("❌ Rejeitar", key=f"rejeitar_{user.get('id')}"):
+                            # Chamar usuario_service.reject_user(user['id'])
+                            st.warning(f"Usuário {user.get('nome')} rejeitado.")
                             st.rerun()
 
     # ==================== TAB 2: TODOS OS USUÁRIOS ====================
@@ -85,7 +75,7 @@ def app():
 
         # Mock data - substituir pela chamada ao serviço
         todos_usuarios = []
-        todos_usuarios = usuario_service.list_all_users()
+        # todos_usuarios = usuario_service.list_all_users()
 
         # Aplicar filtros (quando integrado com banco)
         # if filter_name:

@@ -89,17 +89,6 @@ def create_database():
         )
     """)
     print("  ✓ Tabela 'notifications' criada")
-    
-    # Tabela: face_encoding
-    cursor.execute("""
-        CREATE TABLE IF NOT EXISTS face_encoding (
-            id INT AUTO_INCREMENT PRIMARY KEY,
-            user_id INT NOT NULL,
-            encoding BLOB NOT NULL,
-            FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
-        )
-    """)
-    print("  ✓ Tabela 'face_encoding' criada")
 
     # Criar um manager padrão se não existir (necessário para notificações)
     cursor.execute("SELECT COUNT(*) FROM manager")
@@ -143,7 +132,6 @@ def create_database():
     print("  2. manager")
     print("  3. accessRegisters")
     print("  4. notifications")
-    print("  5. face_encoding")
     print("\n💡 Próximo passo: Execute 'streamlit run facepass/ui/main.py'\n")
 
 
