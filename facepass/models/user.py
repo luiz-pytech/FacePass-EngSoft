@@ -29,7 +29,7 @@ class Usuario:
 
     @classmethod
     def from_dict(cls, data):
-        return cls(
+        usuario = cls(
             id=data.get("id"),
             name=data.get("name"),
             email=data.get("email"),
@@ -37,3 +37,8 @@ class Usuario:
             photo_recognition=data.get("photo_recognition"),
             position=data.get("position"),
         )
+        if "approved" in data:
+            usuario.approved = bool(data.get("approved"))
+        if "created_at" in data:
+            usuario.created_at = data.get("created_at")
+        return usuario

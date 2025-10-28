@@ -10,6 +10,7 @@ from facepass.database.repository.register_repository import RegistroRepository
 from facepass.database.repository.manager_repository import ManagerRepository
 from facepass.controllers.user_controller import UserController
 from facepass.controllers.manager_controller import ManagerController
+from facepass.controllers.notification_controller import NotificationController
 from facepass.services.manager_service import ManagerService
 import os
 from dotenv import load_dotenv
@@ -257,6 +258,8 @@ def init_services():
             # Inicializar controladores
             user_controller = UserController(user_service)
             manager_controller = ManagerController(manager_service)
+            notification_controller = NotificationController(
+                notification_service)
 
             # Armazenar no session_state
             st.session_state['usuario_repository'] = usuario_repository
@@ -271,6 +274,7 @@ def init_services():
 
             st.session_state['user_controller'] = user_controller
             st.session_state['manager_controller'] = manager_controller
+            st.session_state['notification_controller'] = notification_controller
 
             # Carregar estatísticas dos usuários
             stats_result = user_controller.get_stats()

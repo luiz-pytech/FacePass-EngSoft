@@ -118,12 +118,13 @@ class UserController:
                     'errors': []
                 }
             else:
-                usuario = self.user_service.get_user_by_id(user_id)
+                # Rejeitar usuário (remove do sistema)
+                self.user_service.reject_user(user_id)
                 return {
-                    'success': False,
-                    'message': "Usuário rejeitado.",
-                    'data': usuario,
-                    'errors': [motivo] if motivo else []
+                    'success': True,
+                    'message': "Usuário rejeitado e removido do sistema.",
+                    'data': None,
+                    'errors': []
                 }
         except Exception as e:
             return {
@@ -167,9 +168,9 @@ class UserController:
             Dict com informações do status
         """
         try:
-            usuario = self.user_service.get_user_by_email(email)
+            usuario_dict = self.user_service.get_user_by_email(email)
 
-            if not usuario:
+            if not usuario_dict:
                 return {
                     'success': False,
                     'message': 'Usuário não encontrado',
@@ -177,16 +178,16 @@ class UserController:
                     'errors': ['Email não cadastrado no sistema']
                 }
 
-            status_texto = "Aprovado" if usuario.approved else "Aguardando Aprovação"
+            status_texto = "Aprovado" if usuario_dict['approved'] else "Aguardando Aprovação"
 
             return {
                 'success': True,
                 'message': f'Status: {status_texto}',
                 'data': {
-                    'nome': usuario.name,
-                    'email': usuario.email,
-                    'cargo': usuario.position,
-                    'aprovado': usuario.approved,
+                    'nome': usuario_dict['name'],
+                    'email': usuario_dict['email'],
+                    'cargo': usuario_dict['position'],
+                    'aprovado': usuario_dict['approved'],
                     'status_texto': status_texto
                 },
                 'errors': []
@@ -230,6 +231,146 @@ class UserController:
             return {
                 'success': False,
                 'message': 'Erro ao obter estatísticas',
+                'data': None,
+                'errors': [str(e)]
+            }
+
+    def list_all_users(self) -> Dict:
+        """
+        Lista todos os usuários do sistema.
+
+        Returns:
+            Dict padronizado com lista de usuários
+        """
+        try:
+            usuarios = self.user_service.list_all_users()
+            return {
+                'success': True,
+                'message': f'{len(usuarios)} usuário(s) encontrado(s)',
+                'data': usuarios,
+                'errors': []
+            }
+        except Exception as e:
+            return {
+                'success': False,
+                'message': 'Erro ao listar usuários',
+                'data': [],
+                'errors': [str(e)]
+            }
+
+    def remove_user(self, user_id: int) -> Dict:
+        """
+        Remove um usuário do sistema.
+
+        Arguments:
+            user_id (int): ID do usuário a ser removido
+
+        Returns:
+            Dict padronizado
+        """
+        try:
+            self.user_service.remove_user(user_id)
+            return {
+                'success': True,
+                'message': 'Usuário removido com sucesso.',
+                'data': None,
+                'errors': []
+            }
+        except ValueError as e:
+            return {
+                'success': False,
+                'message': 'Usuário não encontrado.',
+                'data': None,
+                'errors': [str(e)]
+            }
+        except Exception as e:
+            return {
+                'success': False,
+                'message': 'Erro ao remover usuário.',
+                'data': None,
+                'errors': [str(e)]
+            }
+
+    def update_user(self, user_id: int, name: str, email: str, cpf: str, position: str, approved: bool) -> Dict:
+        """
+        Atualiza os dados de um usuário.
+
+        Arguments:
+            user_id (int): ID do usuário
+            name (str): Nome completo
+            email (str): Email
+            cpf (str): CPF
+            position (str): Cargo
+            approved (bool): Status de aprovação
+
+        Returns:
+            Dict padronizado
+        """
+        errors = []
+
+        # Validações
+        if not self.validator.validar_name(name):
+            errors.append("Nome inválido. Deve ter entre 3 e 100 caracteres.")
+        if not self.validator.validar_email(email):
+            errors.append("Email inválido.")
+        if not self.validator.validar_cpf(cpf):
+            errors.append("CPF inválido.")
+        if not self.validator.validar_position(position):
+            errors.append("Cargo inválido. Deve ser 'Desenvolvedor', 'Analista de Dados' ou 'Gerente'.")
+
+        if errors:
+            return {
+                'success': False,
+                'message': 'Erro na validação dos dados.',
+                'data': None,
+                'errors': errors
+            }
+
+        try:
+            # Buscar usuário existente para pegar a foto
+            usuario_existente_dict = self.user_service.get_user_by_id(user_id)
+
+            if not usuario_existente_dict:
+                return {
+                    'success': False,
+                    'message': 'Usuário não encontrado.',
+                    'data': None,
+                    'errors': ['ID inválido']
+                }
+
+            # Criar objeto Usuario atualizado
+            usuario = Usuario(
+                id=user_id,
+                name=name.strip(),
+                email=email.strip(),
+                cpf=cpf.strip(),
+                photo_recognition=usuario_existente_dict['photo_recognition'],
+                position=position.strip()
+            )
+            usuario.approved = approved
+            usuario.created_at = usuario_existente_dict['created_at']
+
+            # Atualizar no banco
+            self.user_service.update_user(usuario)
+
+            return {
+                'success': True,
+                'message': 'Usuário atualizado com sucesso.',
+                'data': usuario,
+                'errors': []
+            }
+
+        except ValueError as e:
+            return {
+                'success': False,
+                'message': 'Erro de validação.',
+                'data': None,
+                'errors': [str(e)]
+            }
+        except Exception as e:
+            return {
+                'success': False,
+                'message': 'Erro ao atualizar usuário.',
                 'data': None,
                 'errors': [str(e)]
             }

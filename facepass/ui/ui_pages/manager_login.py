@@ -1,4 +1,5 @@
 import streamlit as st
+import time
 
 
 def app():
@@ -75,7 +76,8 @@ def app():
         manager_controller = st.session_state.get('manager_controller')
 
         if not manager_controller:
-            st.error("❌ Serviço de autenticação indisponível. Verifique a conexão com o banco.")
+            st.error(
+                "❌ Serviço de autenticação indisponível. Verifique a conexão com o banco.")
             return
 
         with st.spinner("🔐 Autenticando..."):
@@ -93,10 +95,10 @@ def app():
                 st.success(f"✅ {result['message']}")
                 st.balloons()
 
-                st.info("👉 Use o menu lateral para acessar as funcionalidades de gestão")
+                st.info(
+                    "👉 Use o menu lateral para acessar as funcionalidades de gestão")
 
                 # Pequeno delay para mostrar a mensagem
-                import time
                 time.sleep(1)
                 st.rerun()
 
