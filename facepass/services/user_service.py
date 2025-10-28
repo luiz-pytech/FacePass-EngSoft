@@ -1,4 +1,5 @@
-from facepass.services.validator_service import ValidatorService
+import datetime
+
 from facepass.models.user import Usuario
 from facepass.database.repository.user_repository import UsuarioRepository
 from facepass.services.notification_service import NotificationService
@@ -37,9 +38,6 @@ class UsuarioService:
         """
         if usuario is None:
             raise ValueError("Usuário não pode ser None.")
-
-        if not ValidatorService.validar_usuario(usuario):
-            raise ValueError("Dados do usuário inválidos.")
 
         usuario.approved = False
         usuario.id = 0
@@ -120,8 +118,9 @@ class UsuarioService:
         Raises:
             ValueError: If the data is invalid or the user does not exist
         """
-        if not ValidatorService.validar_usuario(usuario):
-            raise ValueError("Dados do usuário inválidos.")
+
+        if usuario is None:
+            raise ValueError("Usuário não pode ser None.")
 
         existing_user = self.usuario_repository.get_user_by_id(usuario.id)
         if not existing_user:

@@ -65,7 +65,7 @@ class NotificationRepository:
         query = """
             SELECT COUNT(*) as total
             FROM notifications
-            WHERE manager_id = %s AND read = FALSE
+            WHERE manager_id = %s AND is_read = FALSE
         """
         params = (manager_id,)
         result = self.executor.execute_query_one(query, params)
