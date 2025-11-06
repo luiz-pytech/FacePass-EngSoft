@@ -9,3 +9,5 @@ git+https://github.com/ageitgey/face_recognition_models
 opencv-python-headless
 pillow
 setuptools
+plotly
+pandas

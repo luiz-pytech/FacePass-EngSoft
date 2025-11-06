@@ -4,6 +4,7 @@ from . import registers
 from . import facial_recognition
 from . import user_registration
 from . import manager_login
+from . import dashboard
 
 __all__ = [
     'notifications',
@@ -11,5 +12,6 @@ __all__ = [
     'registers',
     'facial_recognition',
     'user_registration',
-    'manager_login'
+    'manager_login',
+    'dashboard'
 ]

@@ -1,20 +1,23 @@
 import streamlit as st
-from facepass.ui.ui_pages import notifications, approve_registration, registers, facial_recognition, user_registration, manager_login
+from facepass.ui.ui_pages import notifications, approve_registration, registers, facial_recognition, user_registration, manager_login, dashboard
 from facepass.database.setup_database.connection import DatabaseConnection
 from facepass.services.user_service import UsuarioService
 from facepass.services.notification_service import NotificationService
 from facepass.services.access_service import AccessService
 from facepass.services.face_recognition_service import FaceRecognitionService
+from facepass.services.manager_service import ManagerService
+from facepass.services.dashboard_service import DashboardService
 from facepass.database.repository.user_repository import UsuarioRepository
 from facepass.database.repository.notification_repository import NotificationRepository
 from facepass.database.repository.register_repository import RegistroRepository
 from facepass.database.repository.face_encoding_repository import FaceEncodingRepository
 from facepass.database.repository.manager_repository import ManagerRepository
+from facepass.database.repository.dashboard_repository import DashboardRepository
 from facepass.controllers.face_recognition_controller import FaceRecognitionController
 from facepass.controllers.user_controller import UserController
 from facepass.controllers.manager_controller import ManagerController
 from facepass.controllers.notification_controller import NotificationController
-from facepass.services.manager_service import ManagerService
+from facepass.controllers.dashboard_controller import DashboardController
 import os
 from dotenv import load_dotenv
 
@@ -28,11 +31,9 @@ def sidebar():
 
     st.sidebar.info("Sistema de Controle de Acesso por Reconhecimento Facial")
 
-    # Verificar se gestor está autenticado
     manager_authenticated = st.session_state.get(
         'manager_authenticated', False)
 
-    # Mostrar status de autenticação
     if manager_authenticated:
         manager_name = st.session_state.get('manager_name', 'Gestor')
         st.sidebar.success(f"✅ **{manager_name}**")
@@ -50,6 +51,7 @@ def sidebar():
 
     # Páginas restritas (apenas para gestores autenticados)
     restricted_pages = [
+        "📊 Dashboard",
         "👤 Gestão de Cadastros",
         "📜 Relatórios de Acesso",
         "🔔 Notificações"
@@ -69,12 +71,6 @@ def sidebar():
     )
 
     st.sidebar.markdown("---")
-
-    # Contador de notificações não lidas (mock - substituir por chamada real)
-    # if 'notificacoes' in st.session_state:
-    #     nao_lidas = len([n for n in st.session_state.notificacoes if not n.get('lida', False)])
-    #     if nao_lidas > 0:
-    #         st.sidebar.warning(f"🔔 {nao_lidas} notificação(ões) não lida(s)")
 
     # Informações adicionais
     with st.sidebar.expander("ℹ️ Sobre o Sistema"):
@@ -250,6 +246,7 @@ def init_services():
             access_repository = RegistroRepository(connection)
             face_encoding_repository = FaceEncodingRepository(connection)
             manager_repository = ManagerRepository(connection)
+            dashboard_repository = DashboardRepository(connection)
 
             # Inicializar serviços
             user_service = UsuarioService(
@@ -261,6 +258,8 @@ def init_services():
             face_recognition_service = FaceRecognitionService(
                 face_encoding_repository)
             manager_service = ManagerService(manager_repository)
+            dashboard_service = DashboardService(
+                dashboard_repository, user_service, notification_service)
 
             # Inicializar controllers
             face_recognition_controller = FaceRecognitionController(
@@ -269,6 +268,7 @@ def init_services():
             manager_controller = ManagerController(manager_service)
             notification_controller = NotificationController(
                 notification_service)
+            dashboard_controller = DashboardController(dashboard_service)
 
             # Armazenar no session_state
             st.session_state['usuario_repository'] = usuario_repository
@@ -287,6 +287,7 @@ def init_services():
             st.session_state['user_controller'] = user_controller
             st.session_state['manager_controller'] = manager_controller
             st.session_state['notification_controller'] = notification_controller
+            st.session_state['dashboard_controller'] = dashboard_controller
 
             # Carregar estatísticas dos usuários
             stats_result = user_controller.get_stats()
@@ -341,6 +342,8 @@ def main():
         facial_recognition.app()
     elif page == "👨‍💼 Login de Gestor":
         manager_login.app()
+    elif page == "📊 Dashboard":
+        dashboard.app()
     elif page == "👤 Gestão de Cadastros":
         approve_registration.app()
     elif page == "📜 Relatórios de Acesso":
