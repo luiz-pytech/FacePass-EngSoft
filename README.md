@@ -6,6 +6,7 @@ Sistema de reconhecimento facial para controle de acesso desenvolvido como parte
 
 - [Sobre o Projeto](#sobre-o-projeto)
 - [Como clonar ou baixar](#como-clonar-ou-baixar)  
+- [Como rodar o projeto](#como-rodar-o-projeto)
 - [Estrutura do Projeto](#estrutura-do-projeto)  
 - [Licença](#licença)  
 - [Histórias de Usuário](#histórias-de-usuário)
@@ -87,22 +88,61 @@ Isso criará uma cópia local do repositório em sua máquina.
 3. Selecione **Download ZIP**.
 4. Extraia o arquivo ZIP para o local desejado em seu computador.
 
+## Como rodar o projeto
+
+### 1. Crie e ative um ambiente virtual
+```
+python -m venv venv
+venv\Scripts\activate
+```
+
+### 2. Baixe os requerimentos
+```
+pip install -r requirements.txt
+```
+
+### 3. Configure o arquivo .env
+Renomeie o arquivo .env.example para .env e adicione sua credenciais do banco de dados: 
+```
+DB_HOST=localhost
+DB_USER=root
+DB_PASSWORD=yourpassword
+DB_NAME=facepass_db
+DB_PORT=3306
+```
+
+### 4. Crie as tabelas no banco de dados
+Execute o script de criação:
+```
+python -m facepass.database.setup_database.scripts_tables
+```
+
+### 5. Rode a aplicação do streamlit:
+Você pode executar com ou sem o script de criação do banco:
+
+```
+python -m streamlit run .\facepass\ui\app.py
+```
 
 ## Estrutura do Projeto
 
-> *Esta seção pode variar conforme a organização do repositório de cada grupo.*
+> *Estrutura do projeto para o FacePass - EngSoft*
 
 ```
 FacePass-EngSoft/
 ├── LICENSE
 ├── README.md
+├── .env.example
 ├── requirements.txt
-├── main.py
+├── .gitignore
 ├── facepass/          # código-fonte principal
 │   ├── core/          # lógica de reconhecimento
-│   ├── database/      # persistência de dados
+│   ├── services/      # lógica de negócio das classes
+│   ├── models/        # Modelagem das classes
+│   ├── database/      # persistência de dados banco de dados
 │   ├── api/           # rotas/serviços
 │   └── ui/            # interface (streamlit/web)
+|   |   └── main.py        
 └── diagrams/          # diagramas
 └── docs/              # documentação
 ```
