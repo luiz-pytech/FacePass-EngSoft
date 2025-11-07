@@ -22,9 +22,9 @@ class AccessController:
         Busca registros de acesso com filtros
 
         Args:
-            user_name: Nome do usu�rio (parcial)
+            user_name: Nome do usuario (parcial)
             status: "Todos", "Permitido" ou "Negado"
-            location: Local/C�mera (ainda n�o implementado no banco)
+            location: Local/Câmera (ainda não implementado no banco)
             start_date: Data inicial (YYYY-MM-DD)
             end_date: Data final (YYYY-MM-DD)
 
@@ -64,14 +64,14 @@ class AccessController:
 
     def get_statistics_by_period(self, start_date: str = "", end_date: str = "") -> Dict:
         """
-        Obt�m estat�sticas do per�odo
+        Obtém estatísticas do período
 
         Args:
             start_date: Data inicial (YYYY-MM-DD)
             end_date: Data final (YYYY-MM-DD)
 
         Returns:
-            Dict com estat�sticas do per�odo
+            Dict com estatísticas do período
         """
         try:
             stats = self.access_service.get_statistics_by_period(
@@ -79,14 +79,14 @@ class AccessController:
 
             return {
                 'success': True,
-                'message': 'Estat�sticas obtidas com sucesso',
+                'message': 'Estatísticas obtidas com sucesso',
                 'data': stats,
                 'errors': []
             }
         except Exception as e:
             return {
                 'success': False,
-                'message': 'Erro ao obter estat�sticas',
+                'message': 'Erro ao obter estatísticas',
                 'data': {
                     'total': 0,
                     'permitidos': 0,
@@ -128,12 +128,12 @@ class AccessController:
             registers: Lista de registros a exportar
 
         Returns:
-            String com conte�do CSV
+            String com conteudo CSV
         """
         if not registers:
-            return "Nenhum registro dispon�vel"
+            return "Nenhum registro disponivel"
 
-        # Cabe�alho
+        # Cabeçalho
         csv_lines = [
             "ID,Usuario,Data/Hora,Status,Tipo Acesso,Motivo Negacao\n"]
 
