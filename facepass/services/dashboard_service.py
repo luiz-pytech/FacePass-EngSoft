@@ -28,8 +28,7 @@ class DashboardService:
         """
         try:
             # Obter estatísticas de usuários
-            user_stats_result = self.user_service.get_stats()
-            user_stats = user_stats_result.get('data', {}) if user_stats_result.get('success') else {}
+            user_stats = self.user_service.get_statistics()
 
             # Obter estatísticas de acessos
             today_total = self.dashboard_repository.get_today_accesses_count()
@@ -37,13 +36,18 @@ class DashboardService:
             today_denied = self.dashboard_repository.get_today_denied_count()
             unread_notifications = self.dashboard_repository.get_unread_notifications_count()
 
+            # Calcular taxa de aprovação
+            total_users = user_stats.get('total', 0)
+            approved_users = user_stats.get('approved', 0)
+            approval_rate = (approved_users / total_users * 100) if total_users > 0 else 0.0
+
             return {
                 'success': True,
                 'data': {
-                    'total_users': user_stats.get('total_users', 0),
-                    'approved_users': user_stats.get('approved_users', 0),
-                    'pending_users': user_stats.get('pending_users', 0),
-                    'approval_rate': user_stats.get('approval_rate', 0.0),
+                    'total_users': total_users,
+                    'approved_users': approved_users,
+                    'pending_users': user_stats.get('pending', 0),
+                    'approval_rate': approval_rate,
                     'today_total': today_total,
                     'today_allowed': today_allowed,
                     'today_denied': today_denied,

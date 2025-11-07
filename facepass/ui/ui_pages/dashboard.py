@@ -13,7 +13,8 @@ def app():
 
     # Verificar autenticação do gestor
     if not st.session_state.get('manager_authenticated', False):
-        st.warning("⚠️ Acesso restrito. Faça login como gestor para acessar o dashboard.")
+        st.warning(
+            "⚠️ Acesso restrito. Faça login como gestor para acessar o dashboard.")
         return
 
     # Obter controller do session_state
@@ -150,7 +151,8 @@ def render_presence_control(dashboard_controller):
     result = dashboard_controller.get_present_users()
 
     if not result.get('success'):
-        st.error(f"❌ {result.get('message', 'Erro ao carregar usuários presentes')}")
+        st.error(
+            f"❌ {result.get('message', 'Erro ao carregar usuários presentes')}")
         return
 
     present_users = result.get('data', [])
@@ -173,7 +175,8 @@ def render_presence_control(dashboard_controller):
     df_present = pd.DataFrame(present_users)
 
     # Formatar a tabela
-    df_display = df_present[['name', 'position', 'last_entry_time', 'status']].copy()
+    df_display = df_present[['name', 'position',
+                             'last_entry_time', 'status']].copy()
     df_display.columns = ['Nome', 'Cargo', 'Entrada', 'Status']
 
     # Adicionar ícone de status

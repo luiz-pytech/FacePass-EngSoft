@@ -8,13 +8,27 @@ def app():
     st.title("📜 Relatórios de Acesso")
     st.markdown("---")
 
+    # Verificar autenticação do gestor
+    if not st.session_state.get('manager_authenticated', False):
+        st.warning(
+            "⚠️ Acesso restrito. Faça login como gestor para acessar os relatórios.")
+        return
+
+    # Obter controller do session_state
+    access_controller = st.session_state.get('access_controller')
+
+    if not access_controller:
+        st.error("❌ Relatórios não disponíveis. Controller não inicializado.")
+        return
+
     # ==================== FILTROS ====================
     st.subheader("🔍 Filtros de Busca")
 
     col1, col2, col3 = st.columns(3)
 
     with col1:
-        filter_user = st.text_input("👤 Nome do Usuário", placeholder="Digite o nome...")
+        filter_user = st.text_input(
+            "👤 Nome do Usuário", placeholder="Digite o nome...")
 
     with col2:
         filter_date_start = st.date_input(
@@ -37,32 +51,44 @@ def app():
         )
 
     with col5:
-        filter_location = st.text_input("📍 Local/Câmera", placeholder="Ex: Entrada Principal")
+        filter_location = st.text_input(
+            "📍 Local/Câmera", placeholder="Ex: Entrada Principal")
 
     with col6:
         st.markdown("<br>", unsafe_allow_html=True)
-        btn_search = st.button("🔍 Buscar", type="primary", use_container_width=True)
+        btn_search = st.button("🔍 Buscar", type="primary", width='stretch')
 
     st.markdown("---")
 
     # ==================== ESTATÍSTICAS ====================
     st.subheader("📊 Estatísticas do Período")
 
-    # Mock data - substituir por chamada ao serviço
-    registros = []
-    # registros = registro_service.get_access_records(
-    #     user_name=filter_user,
-    #     date_start=filter_date_start,
-    #     date_end=filter_date_end,
-    #     status=filter_status,
-    #     location=filter_location
-    # )
+    # Buscar registros com filtros
+    result = access_controller.get_registers_with_filters(
+        user_name=filter_user,
+        status=filter_status,
+        location=filter_location,
+        start_date=filter_date_start.strftime('%Y-%m-%d'),
+        end_date=filter_date_end.strftime('%Y-%m-%d')
+    )
 
-    # Calcular estatísticas
-    total_acessos = len(registros)
-    acessos_permitidos = len([r for r in registros if r.get('acesso_permitido')])
-    acessos_negados = total_acessos - acessos_permitidos
-    taxa_sucesso = (acessos_permitidos / total_acessos * 100) if total_acessos > 0 else 0
+    if not result.get('success'):
+        st.error(f"❌ {result.get('message', 'Erro ao carregar registros')}")
+        return
+
+    registros = result.get('data', [])
+
+    # Buscar estatísticas
+    stats_result = access_controller.get_statistics_by_period(
+        start_date=filter_date_start.strftime('%Y-%m-%d'),
+        end_date=filter_date_end.strftime('%Y-%m-%d')
+    )
+
+    stats = stats_result.get('data', {})
+    total_acessos = stats.get('total', 0)
+    acessos_permitidos = stats.get('permitidos', 0)
+    acessos_negados = stats.get('negados', 0)
+    taxa_sucesso = stats.get('taxa_sucesso', 0.0)
 
     col_stat1, col_stat2, col_stat3, col_stat4 = st.columns(4)
 
@@ -87,18 +113,20 @@ def app():
     col_export1, col_export2, col_export3 = st.columns([1, 1, 4])
 
     with col_export1:
-        if st.button("📥 Exportar CSV", use_container_width=True):
+        if registros and st.button("📥 Exportar CSV", width='stretch'):
             # Gerar CSV dos registros
-            csv_content = generate_csv(registros)
+            csv_content = access_controller.export_registers_csv(registros)
             st.download_button(
                 label="⬇️ Download CSV",
                 data=csv_content,
                 file_name=f"relatorio_acessos_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv",
                 mime="text/csv"
             )
+        elif not registros:
+            st.button("📥 Exportar CSV", width='stretch', disabled=True)
 
     with col_export2:
-        if st.button("📄 Exportar PDF", use_container_width=True):
+        if st.button("📄 Exportar PDF", width='stretch'):
             st.info("🚧 Funcionalidade de exportação PDF em desenvolvimento")
 
     st.markdown("<br>", unsafe_allow_html=True)
@@ -110,15 +138,24 @@ def app():
         # Ordenar por data (mais recente primeiro)
         registros_ordenados = sorted(
             registros,
-            key=lambda x: x.get('data_hora', datetime.min),
+            key=lambda x: x.get('created_at', datetime.min),
             reverse=True
         )
 
         # Exibir em cards
         for idx, registro in enumerate(registros_ordenados):
-            status_icon = "✅" if registro.get('acesso_permitido') else "❌"
-            status_text = "PERMITIDO" if registro.get('acesso_permitido') else "NEGADO"
-            status_color = "#28a745" if registro.get('acesso_permitido') else "#dc3545"
+            status_icon = "✅" if registro.get('access_allowed') else "❌"
+            status_text = "PERMITIDO" if registro.get(
+                'access_allowed') else "NEGADO"
+            status_color = "#28a745" if registro.get(
+                'access_allowed') else "#dc3545"
+
+            # Formatação da data
+            created_at = registro.get('created_at', 'N/A')
+            if isinstance(created_at, datetime):
+                data_formatada = created_at.strftime('%d/%m/%Y %H:%M:%S')
+            else:
+                data_formatada = str(created_at)
 
             with st.container():
                 st.markdown(f"""
@@ -132,13 +169,13 @@ def app():
                         <div style="display: flex; justify-content: space-between; align-items: center;">
                             <div style="flex: 1;">
                                 <h4 style="margin: 0; color: #333;">
-                                    {status_icon} {registro.get('usuario_nome', 'Desconhecido')}
+                                    {status_icon} {registro.get('user_name', 'Desconhecido')}
                                 </h4>
                                 <p style="margin: 5px 0; color: #666; font-size: 14px;">
-                                    📅 {registro.get('data_hora', 'N/A').strftime('%d/%m/%Y %H:%M:%S') if isinstance(registro.get('data_hora'), datetime) else registro.get('data_hora', 'N/A')}
+                                    📅 {data_formatada}
                                 </p>
                                 <p style="margin: 5px 0; color: #666; font-size: 14px;">
-                                    📍 {registro.get('local', 'Local não especificado')}
+                                    🚪 Tipo: {registro.get('type_access', 'N/A').upper()}
                                 </p>
                             </div>
                             <div style="text-align: right;">
@@ -159,20 +196,22 @@ def app():
                     col_det1, col_det2 = st.columns(2)
 
                     with col_det1:
-                        st.markdown(f"**Tipo de Acesso:** {registro.get('tipo_acesso', 'N/A')}")
-                        st.markdown(f"**Confiança do Reconhecimento:** {registro.get('confianca_reconhecimento', 'N/A')}%")
+                        st.markdown(
+                            f"**ID do Registro:** {registro.get('id', 'N/A')}")
+                        st.markdown(
+                            f"**Tipo de Acesso:** {registro.get('type_access', 'N/A')}")
+                        st.markdown(
+                            f"**Email do Usuário:** {registro.get('user_email', 'N/A')}")
 
-                        if not registro.get('acesso_permitido'):
-                            st.markdown(f"**⚠️ Motivo da Negação:** {registro.get('motivo_negacao', 'N/A')}")
+                        if not registro.get('access_allowed'):
+                            st.markdown(
+                                f"**⚠️ Motivo da Negação:** {registro.get('reason_denied', 'N/A')}")
 
                     with col_det2:
                         # Exibir imagem capturada (se disponível)
-                        if registro.get('imagem_capturada'):
-                            st.image(
-                                registro['imagem_capturada'],
-                                caption="Imagem Capturada",
-                                width=200
-                            )
+                        if registro.get('captured_image'):
+                            st.info(
+                                "📷 Imagem capturada disponível no banco de dados")
                         else:
                             st.info("Sem imagem disponível")
 
@@ -198,25 +237,3 @@ def app():
             # Agrupar registros por dia
             # (implementar quando integrado com dados reais)
             st.info("🚧 Gráfico de timeline em desenvolvimento")
-
-
-def generate_csv(registros):
-    """Gera conteúdo CSV dos registros"""
-    if not registros:
-        return "Nenhum registro disponível"
-
-    # Cabeçalho
-    csv_lines = ["ID,Usuario,Data/Hora,Local,Status,Tipo Acesso,Confianca,Motivo Negacao\n"]
-
-    # Dados
-    for reg in registros:
-        linha = f"{reg.get('id', '')},{reg.get('usuario_nome', '')},"
-        linha += f"{reg.get('data_hora', '')},"
-        linha += f"{reg.get('local', '')},"
-        linha += f"{'Permitido' if reg.get('acesso_permitido') else 'Negado'},"
-        linha += f"{reg.get('tipo_acesso', '')},"
-        linha += f"{reg.get('confianca_reconhecimento', '')},"
-        linha += f"{reg.get('motivo_negacao', '')}\n"
-        csv_lines.append(linha)
-
-    return "".join(csv_lines)
