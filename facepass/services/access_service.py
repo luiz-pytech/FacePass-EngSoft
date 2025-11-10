@@ -87,7 +87,7 @@ class AccessService:
         Returns:
             List of all access logs
         """
-        return self.acesso_repository.export_registers()
+        return self.acesso_repository.list_all_registers()
 
     def list_all_access_records(self):
         """

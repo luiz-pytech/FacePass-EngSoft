@@ -27,7 +27,6 @@ def app():
     # Tabs para organizar funcionalidades
     tab1, tab2 = st.tabs(["⏳ Pendentes de Aprovação", "👥 Todos os Usuários"])
 
-    # ==================== TAB 1: PENDENTES DE APROVAÇÃO ====================
     with tab1:
         st.subheader("Usuários Aguardando Aprovação")
 
@@ -82,7 +81,7 @@ def app():
                             "⚠️ **Confirmação necessária:** Clique novamente em 'Rejeitar' para confirmar a exclusão deste usuário.")
 
                     # Botões de ação
-                    col_btn1, col_btn2, col_btn3 = st.columns([1, 1, 4])
+                    col_btn1, col_btn2 = st.columns([1, 1, 4])
 
                     with col_btn1:
                         if st.button("✅ Aprovar", key=f"aprovar_{user.id}", use_container_width=True):

@@ -1,5 +1,3 @@
-import datetime
-
 from facepass.models.user import Usuario
 from facepass.database.repository.user_repository import UsuarioRepository
 from facepass.services.notification_service import NotificationService
@@ -79,7 +77,24 @@ class UsuarioService:
         Raises:
             ValueError: If the user is not found
         """
-        self.usuario_repository.reject_user(user_id)
+        
+        self.usuario_repository.remove_user(user_id)
+    
+    def remove_user(self, user_id: int) -> None:
+        """
+        Remove um usuário do sistema (usado para usuários já aprovados).
+
+        Args:
+            user_id: ID do usuário a remover
+
+        Raises:
+            ValueError: Se o usuário não for encontrado
+        """
+        existing_user = self.usuario_repository.get_user_by_id(user_id)
+        if not existing_user:
+                raise ValueError("Usuário não encontrado.")
+
+        self.usuario_repository.remove_user(user_id)
 
     def list_pending_approvals(self):
         """
@@ -98,15 +113,6 @@ class UsuarioService:
             List of approved users
         """
         return self.usuario_repository.list_approved_users()
-
-    def list_denied_users(self):
-        """
-        Lists all denied users.
-
-        Returns:
-            List of denied users
-        """
-        return self.usuario_repository.list_denied_users()
 
     def update_user(self, usuario: Usuario) -> None:
         """
@@ -127,22 +133,6 @@ class UsuarioService:
             raise ValueError("Usuário não encontrado.")
 
         self.usuario_repository.save_user(usuario)
-
-    def remove_user(self, user_id: int) -> None:
-        """
-        Removes a user from the system.
-
-        Args:
-            user_id: ID of the user to remove
-
-        Raises:
-            ValueError: If the user is not found
-        """
-        existing_user = self.usuario_repository.get_user_by_id(user_id)
-        if not existing_user:
-            raise ValueError("Usuário não encontrado.")
-
-        self.usuario_repository.remove_user(user_id)
 
     def list_all_users(self):
         """

@@ -1,4 +1,4 @@
-import hashlib
+import bcrypt
 from typing import Optional, Dict
 from facepass.models.manager import Gestor
 from facepass.database.repository.manager_repository import ManagerRepository
@@ -19,16 +19,11 @@ class ManagerService:
 
     @staticmethod
     def hash_password(password: str) -> str:
-        """
-        Generates SHA-256 hash of the password.
+        return bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
 
-        Args:
-            password: Plain text password
-
-        Returns:
-            Hashed password string
-        """
-        return hashlib.sha256(password.encode()).hexdigest()
+    @staticmethod
+    def verify_password(password: str, hashed: str) -> bool:
+        return bcrypt.checkpw(password.encode('utf-8'), hashed.encode('utf-8'))
 
     def authenticate(self, email: str, password: str) -> Optional[Gestor]:
         """
