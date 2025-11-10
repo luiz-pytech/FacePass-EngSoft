@@ -1,25 +1,6 @@
 import streamlit as st
 from facepass.ui.ui_pages import notifications, approve_registration, registers, facial_recognition, user_registration, manager_login, dashboard
-from facepass.database.setup_database.connection import DatabaseConnection
-from facepass.services.user_service import UsuarioService
-from facepass.services.notification_service import NotificationService
-from facepass.services.access_service import AccessService
-from facepass.services.face_recognition_service import FaceRecognitionService
-from facepass.services.manager_service import ManagerService
-from facepass.services.dashboard_service import DashboardService
-from facepass.database.repository.user_repository import UsuarioRepository
-from facepass.database.repository.notification_repository import NotificationRepository
-from facepass.database.repository.register_repository import RegistroRepository
-from facepass.database.repository.face_encoding_repository import FaceEncodingRepository
-from facepass.database.repository.manager_repository import ManagerRepository
-from facepass.database.repository.dashboard_repository import DashboardRepository
-from facepass.controllers.face_recognition_controller import FaceRecognitionController
-from facepass.controllers.user_controller import UserController
-from facepass.controllers.manager_controller import ManagerController
-from facepass.controllers.notification_controller import NotificationController
-from facepass.controllers.dashboard_controller import DashboardController
-from facepass.controllers.access_controller import AccessController
-import os
+from facepass.services.init_services import init_services, clean_db_services
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -222,105 +203,6 @@ def home_page():
     """)
 
 
-def init_services():
-    """Inicializa os serviços necessários"""
-
-    # Tentar estabelecer conexão com banco de dados
-    if 'db_connection' not in st.session_state:
-        try:
-            cnx = DatabaseConnection(
-                os.getenv("DB_HOST"),
-                os.getenv("DB_USER"),
-                os.getenv("DB_PASSWORD"),
-                os.getenv("DB_NAME")
-            )
-            cnx.connect()
-            connection = cnx.get_connection()
-
-            # Armazenar conexão e objeto DatabaseConnection
-            st.session_state['db_connection'] = cnx
-            st.session_state['connection'] = connection
-
-            # Inicializar repositórios
-            usuario_repository = UsuarioRepository(connection)
-            notification_repository = NotificationRepository(connection)
-            access_repository = RegistroRepository(connection)
-            face_encoding_repository = FaceEncodingRepository(connection)
-            manager_repository = ManagerRepository(connection)
-            dashboard_repository = DashboardRepository(connection)
-
-            # Inicializar serviços
-            user_service = UsuarioService(
-                usuario_repository, notification_repository)
-            notification_service = NotificationService(
-                notification_repository)
-            access_service = AccessService(
-                access_repository, notification_repository, usuario_repository)
-            face_recognition_service = FaceRecognitionService(
-                face_encoding_repository)
-            manager_service = ManagerService(manager_repository)
-            dashboard_service = DashboardService(
-                dashboard_repository, user_service, notification_service)
-
-            # Inicializar controllers
-            face_recognition_controller = FaceRecognitionController(
-                face_recognition_service, user_service, access_service)
-            user_controller = UserController(user_service)
-            manager_controller = ManagerController(manager_service)
-            notification_controller = NotificationController(
-                notification_service)
-            dashboard_controller = DashboardController(dashboard_service)
-            access_controller = AccessController(access_service)
-
-            # Armazenar no session_state
-            st.session_state['usuario_repository'] = usuario_repository
-            st.session_state['notification_repository'] = notification_repository
-            st.session_state['access_repository'] = access_repository
-            st.session_state['face_encoding_repository'] = face_encoding_repository
-            st.session_state['manager_repository'] = manager_repository
-
-            st.session_state['user_service'] = user_service
-            st.session_state['notification_service'] = notification_service
-            st.session_state['access_service'] = access_service
-            st.session_state['face_recognition_service'] = face_recognition_service
-            st.session_state['manager_service'] = manager_service
-
-            st.session_state['face_recognition_controller'] = face_recognition_controller
-            st.session_state['user_controller'] = user_controller
-            st.session_state['manager_controller'] = manager_controller
-            st.session_state['notification_controller'] = notification_controller
-            st.session_state['dashboard_controller'] = dashboard_controller
-            st.session_state['access_controller'] = access_controller
-
-            # Carregar estatísticas dos usuários
-            stats_result = user_controller.get_stats()
-            if stats_result['success']:
-                st.session_state['user_stats'] = stats_result['data']
-            else:
-                st.session_state['user_stats'] = {
-                    'total_users': 0,
-                    'approved_users': 0,
-                    'pending_users': 0,
-                    'approval_rate': 0.0
-                }
-
-            st.success("✅ Conexão com banco de dados estabelecida!")
-
-            st.session_state.acessos_registrados = st.session_state.access_service.list_all_access_records(
-            ) if st.session_state.get('access_service') else []
-
-            st.session_state.taxas_sucesso = st.session_state.access_service.get_success_rate(
-            ) if st.session_state.get('access_service') else 0.0
-
-            st.session_state.notificacoes = st.session_state.notification_service.list_all_notifications(
-            ) if st.session_state.get('notification_service') else []
-
-        except Exception as e:
-            st.error(f"❌ Erro ao conectar com o banco de dados: {str(e)}")
-
-            clean_db_services()
-
-
 def main():
     """Função principal da aplicação"""
     st.set_page_config(
@@ -355,16 +237,5 @@ def main():
         notifications.app()
 
 
-def clean_db_services():
-    """Limpa os serviços do banco de dados ao fechar a aplicação"""
-    if 'db_connection' in st.session_state:
-        db_connection = st.session_state['db_connection']
-        if db_connection:
-            db_connection.close()
-            st.session_state['db_connection'] = None
-            st.session_state['connection'] = None
-            st.session_state['user_service'] = None
-            st.session_state['notification_service'] = None
-            st.session_state['access_service'] = None
-            st.session_state['manager_service'] = None
-            st.session_state['manager_repository'] = None
+if __name__ == "__main__":
+    main()
