@@ -1,7 +1,3 @@
-"""
-Dashboard UI - Página de visualização do dashboard (apenas renderização)
-"""
-
 import streamlit as st
 import plotly.express as px
 import plotly.graph_objects as go
@@ -17,23 +13,23 @@ def app():
             "⚠️ Acesso restrito. Faça login como gestor para acessar o dashboard.")
         return
 
-    # Obter controller do session_state
-    dashboard_controller = st.session_state.get('dashboard_controller')
+    # Obter service do session_state
+    dashboard_service = st.session_state.get('dashboard_service')
 
-    if not dashboard_controller:
-        st.error("❌ Dashboard não disponível. Controller não inicializado.")
+    if not dashboard_service:
+        st.error("❌ Dashboard não disponível. Service não inicializado.")
         return
 
     st.title("📊 Dashboard de Gestão")
     st.markdown("---")
 
     # Quick Cards - Estatísticas principais
-    render_quick_cards(dashboard_controller)
+    render_quick_cards(dashboard_service)
 
     st.markdown("---")
 
     # Controle de Presença
-    render_presence_control(dashboard_controller)
+    render_presence_control(dashboard_service)
 
     st.markdown("---")
 
@@ -41,33 +37,33 @@ def app():
     col1, col2 = st.columns(2)
 
     with col1:
-        render_access_timeline_chart(dashboard_controller)
+        render_access_timeline_chart(dashboard_service)
 
     with col2:
-        render_access_by_hour_chart(dashboard_controller)
+        render_access_by_hour_chart(dashboard_service)
 
     st.markdown("---")
 
     col3, col4 = st.columns(2)
 
     with col3:
-        render_success_rate_chart(dashboard_controller)
+        render_success_rate_chart(dashboard_service)
 
     with col4:
-        render_top_users_chart(dashboard_controller)
+        render_top_users_chart(dashboard_service)
 
     st.markdown("---")
 
     # Gráfico de notificações
-    render_notifications_chart(dashboard_controller)
+    render_notifications_chart(dashboard_service)
 
 
-def render_quick_cards(dashboard_controller):
+def render_quick_cards(dashboard_service):
     """Renderiza os cards com estatísticas rápidas"""
     st.subheader("📈 Visão Geral")
 
-    # Obter dados do controller
-    result = dashboard_controller.get_quick_stats()
+    # Obter dados do service
+    result = dashboard_service.get_quick_stats()
 
     if not result.get('success'):
         st.error(f"❌ {result.get('message', 'Erro ao carregar estatísticas')}")
@@ -143,12 +139,12 @@ def render_quick_cards(dashboard_controller):
         )
 
 
-def render_presence_control(dashboard_controller):
+def render_presence_control(dashboard_service):
     """Renderiza o controle de presença (entrada/saída)"""
     st.subheader("👥 Controle de Presença")
 
-    # Obter dados do controller
-    result = dashboard_controller.get_present_users()
+    # Obter dados do service
+    result = dashboard_service.get_present_users()
 
     if not result.get('success'):
         st.error(
@@ -175,14 +171,11 @@ def render_presence_control(dashboard_controller):
     df_present = pd.DataFrame(present_users)
 
     # Formatar a tabela
-    df_display = df_present[['name', 'position',
-                             'last_entry_time', 'status']].copy()
-    df_display.columns = ['Nome', 'Cargo', 'Entrada', 'Status']
+    df_display = df_present[['name', 'position', 'last_entry_time']].copy()
+    df_display.columns = ['Nome', 'Cargo', 'Entrada']
 
-    # Adicionar ícone de status
-    df_display['Status'] = df_display['Status'].apply(
-        lambda x: "🟢 Presente" if x == "present" else "🔴 Ausente"
-    )
+    # Adicionar coluna de status (todos são presentes por definição)
+    df_display['Status'] = "🟢 Presente"
 
     st.dataframe(
         df_display,
@@ -191,12 +184,12 @@ def render_presence_control(dashboard_controller):
     )
 
 
-def render_access_timeline_chart(dashboard_controller):
+def render_access_timeline_chart(dashboard_service):
     """Gráfico de linha: Acessos ao longo do tempo (últimos 30 dias)"""
     st.subheader("📅 Acessos nos Últimos 30 Dias")
 
-    # Obter dados do controller
-    result = dashboard_controller.get_access_timeline_data(days=30)
+    # Obter dados do service
+    result = dashboard_service.get_access_timeline_data(days=30)
 
     if not result.get('success'):
         st.error(f"❌ {result.get('message', 'Erro ao carregar dados')}")
@@ -247,12 +240,12 @@ def render_access_timeline_chart(dashboard_controller):
     st.plotly_chart(fig, use_container_width=True)
 
 
-def render_access_by_hour_chart(dashboard_controller):
+def render_access_by_hour_chart(dashboard_service):
     """Gráfico de barras: Acessos por hora do dia (hoje)"""
     st.subheader("🕐 Acessos por Hora (Hoje)")
 
-    # Obter dados do controller
-    result = dashboard_controller.get_hourly_distribution_data()
+    # Obter dados do service
+    result = dashboard_service.get_hourly_distribution_data()
 
     if not result.get('success'):
         st.error(f"❌ {result.get('message', 'Erro ao carregar dados')}")
@@ -293,12 +286,12 @@ def render_access_by_hour_chart(dashboard_controller):
     st.plotly_chart(fig, use_container_width=True)
 
 
-def render_success_rate_chart(dashboard_controller):
+def render_success_rate_chart(dashboard_service):
     """Gráfico de área: Taxa de sucesso ao longo do tempo"""
     st.subheader("📈 Taxa de Sucesso de Reconhecimento")
 
-    # Obter dados do controller
-    result = dashboard_controller.get_success_rate_data(days=30)
+    # Obter dados do service
+    result = dashboard_service.get_success_rate_data(days=30)
 
     if not result.get('success'):
         st.error(f"❌ {result.get('message', 'Erro ao carregar dados')}")
@@ -333,12 +326,12 @@ def render_success_rate_chart(dashboard_controller):
     st.plotly_chart(fig, use_container_width=True)
 
 
-def render_top_users_chart(dashboard_controller):
+def render_top_users_chart(dashboard_service):
     """Gráfico de barras horizontal: Top 10 usuários com mais acessos"""
     st.subheader("🏆 Top 10 Usuários")
 
-    # Obter dados do controller
-    result = dashboard_controller.get_top_users_data(limit=10)
+    # Obter dados do service
+    result = dashboard_service.get_top_users_data(limit=10)
 
     if not result.get('success'):
         st.error(f"❌ {result.get('message', 'Erro ao carregar dados')}")
@@ -369,12 +362,12 @@ def render_top_users_chart(dashboard_controller):
     st.plotly_chart(fig, use_container_width=True)
 
 
-def render_notifications_chart(dashboard_controller):
+def render_notifications_chart(dashboard_service):
     """Gráfico de pizza: Distribuição de notificações por tipo"""
     st.subheader("🔔 Notificações por Tipo")
 
-    # Obter dados do controller
-    result = dashboard_controller.get_notification_distribution_data(days=30)
+    # Obter dados do service
+    result = dashboard_service.get_notification_distribution_data(days=30)
 
     if not result.get('success'):
         st.error(f"❌ {result.get('message', 'Erro ao carregar dados')}")

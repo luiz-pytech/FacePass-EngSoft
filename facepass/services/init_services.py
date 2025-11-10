@@ -18,7 +18,6 @@ from facepass.controllers.face_recognition_controller import FaceRecognitionCont
 from facepass.controllers.user_controller import UserController
 from facepass.controllers.manager_controller import ManagerController
 from facepass.controllers.notification_controller import NotificationController
-from facepass.controllers.dashboard_controller import DashboardController
 from facepass.controllers.access_controller import AccessController
 
 
@@ -136,8 +135,6 @@ def initialize_controllers(services: Dict[str, Any]) -> Dict[str, Any]:
         services['notification_service']
     )
 
-    dashboard_controller = DashboardController(services['dashboard_service'])
-
     access_controller = AccessController(services['access_service'])
 
     return {
@@ -145,7 +142,6 @@ def initialize_controllers(services: Dict[str, Any]) -> Dict[str, Any]:
         'user_controller': user_controller,
         'manager_controller': manager_controller,
         'notification_controller': notification_controller,
-        'dashboard_controller': dashboard_controller,
         'access_controller': access_controller
     }
 
@@ -247,7 +243,7 @@ def clean_db_services() -> None:
             'user_service', 'notification_service', 'access_service',
             'face_recognition_service', 'manager_service', 'dashboard_service',
             'face_recognition_controller', 'user_controller', 'manager_controller',
-            'notification_controller', 'dashboard_controller', 'access_controller'
+            'notification_controller', 'access_controller'
         ]
 
         for key in keys_to_clear:

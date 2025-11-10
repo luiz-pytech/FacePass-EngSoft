@@ -1,79 +1,57 @@
+from typing import List, Dict, Any
+from facepass.database.setup_database.executor_query import QueryExecutor
+
 
 class DashboardRepository:
     """Repository para queries relacionadas ao dashboard de gestão"""
 
     def __init__(self, connection):
-        """
-        Inicializa o repository com uma conexão ao banco de dados
-
-        Args:
-            connection: Conexão MySQL ativa
-        """
         self.connection = connection
+        self.executor = QueryExecutor(connection)
 
-    def get_today_accesses_count(self):
-        """Retorna o total de acessos hoje"""
+    def get_today_accesses_count(self) -> int:
         query = """
             SELECT COUNT(*) as count
             FROM accessRegisters
             WHERE DATE(created_at) = CURDATE()
         """
-        cursor = self.connection.cursor(dictionary=True)
-        cursor.execute(query)
-        result = cursor.fetchone()
-        cursor.close()
+        result = self.executor.execute_query_one(query)
         return result['count'] if result else 0
 
-    def get_today_allowed_count(self):
-        """Retorna o total de acessos permitidos hoje"""
+    def get_today_allowed_count(self) -> int:
         query = """
             SELECT COUNT(*) as count
             FROM accessRegisters
             WHERE DATE(created_at) = CURDATE()
             AND access_allowed = TRUE
         """
-        cursor = self.connection.cursor(dictionary=True)
-        cursor.execute(query)
-        result = cursor.fetchone()
-        cursor.close()
+        result = self.executor.execute_query_one(query)
         return result['count'] if result else 0
 
-    def get_today_denied_count(self):
-        """Retorna o total de acessos negados hoje"""
+    def get_today_denied_count(self) -> int:
         query = """
             SELECT COUNT(*) as count
             FROM accessRegisters
             WHERE DATE(created_at) = CURDATE()
             AND access_allowed = FALSE
         """
-        cursor = self.connection.cursor(dictionary=True)
-        cursor.execute(query)
-        result = cursor.fetchone()
-        cursor.close()
+        result = self.executor.execute_query_one(query)
         return result['count'] if result else 0
 
-    def get_unread_notifications_count(self):
-        """Retorna o total de notificações não lidas"""
+    def get_unread_notifications_count(self) -> int:
         query = """
             SELECT COUNT(*) as count
             FROM notifications
             WHERE is_read = FALSE
         """
-        cursor = self.connection.cursor(dictionary=True)
-        cursor.execute(query)
-        result = cursor.fetchone()
-        cursor.close()
+        result = self.executor.execute_query_one(query)
         return result['count'] if result else 0
 
-    def get_present_users(self):
-        """Retorna lista de usuários atualmente presentes"""
+    def get_present_users(self) -> List[Dict[str, Any]]:
         query = """
             SELECT
-                u.id,
                 u.name,
-                u.email,
                 u.position,
-                last_access.type_access as last_action,
                 last_access.created_at as last_entry_time
             FROM users u
             INNER JOIN (
@@ -94,19 +72,9 @@ class DashboardRepository:
             AND last_access.type_access = 'entrada'
             ORDER BY u.name
         """
-        cursor = self.connection.cursor(dictionary=True)
-        cursor.execute(query)
-        results = cursor.fetchall()
-        cursor.close()
-        return results
+        return self.executor.execute_query(query)
 
-    def get_accesses_by_day(self, days=30):
-        """
-        Retorna acessos agrupados por dia
-
-        Args:
-            days: Número de dias para retornar (padrão: 30)
-        """
+    def get_accesses_by_day(self, days: int = 30) -> List[Dict[str, Any]]:
         query = """
             SELECT
                 DATE(created_at) as date,
@@ -118,14 +86,9 @@ class DashboardRepository:
             GROUP BY DATE(created_at)
             ORDER BY date
         """
-        cursor = self.connection.cursor(dictionary=True)
-        cursor.execute(query, (days,))
-        results = cursor.fetchall()
-        cursor.close()
-        return results
+        return self.executor.execute_query(query, (days,))
 
-    def get_accesses_by_hour(self):
-        """Retorna acessos agrupados por hora (hoje)"""
+    def get_accesses_by_hour(self) -> List[Dict[str, Any]]:
         query = """
             SELECT
                 HOUR(created_at) as hour,
@@ -137,19 +100,9 @@ class DashboardRepository:
             GROUP BY HOUR(created_at)
             ORDER BY hour
         """
-        cursor = self.connection.cursor(dictionary=True)
-        cursor.execute(query)
-        results = cursor.fetchall()
-        cursor.close()
-        return results
+        return self.executor.execute_query(query)
 
-    def get_success_rate_by_day(self, days=30):
-        """
-        Retorna taxa de sucesso por dia
-
-        Args:
-            days: Número de dias para retornar (padrão: 30)
-        """
+    def get_success_rate_by_day(self, days: int = 30) -> List[Dict[str, Any]]:
         query = """
             SELECT
                 DATE(created_at) as date,
@@ -161,19 +114,9 @@ class DashboardRepository:
             GROUP BY DATE(created_at)
             ORDER BY date
         """
-        cursor = self.connection.cursor(dictionary=True)
-        cursor.execute(query, (days,))
-        results = cursor.fetchall()
-        cursor.close()
-        return results
+        return self.executor.execute_query(query, (days,))
 
     def get_top_users(self, limit=10):
-        """
-        Retorna top usuários com mais acessos
-
-        Args:
-            limit: Número de usuários a retornar (padrão: 10)
-        """
         query = """
             SELECT
                 u.name,
@@ -194,12 +137,6 @@ class DashboardRepository:
         return results
 
     def get_notifications_by_type(self, days=30):
-        """
-        Retorna notificações agrupadas por tipo
-
-        Args:
-            days: Número de dias para retornar (padrão: 30)
-        """
         query = """
             SELECT
                 type_notification,
