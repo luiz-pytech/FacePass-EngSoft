@@ -49,9 +49,7 @@ class ManagerService:
             return None
 
         # Verify password hash
-        password_hash = self.hash_password(password)
-
-        if manager_data['password_hash'] != password_hash:
+        if not self.verify_password(password, manager_data['password_hash']):
             return None
 
         # Return Gestor object
