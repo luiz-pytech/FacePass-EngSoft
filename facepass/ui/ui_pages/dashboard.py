@@ -1,7 +1,3 @@
-"""
-Dashboard UI - Página de visualização do dashboard (apenas renderização)
-"""
-
 import streamlit as st
 import plotly.express as px
 import plotly.graph_objects as go
@@ -17,23 +13,23 @@ def app():
             "⚠️ Acesso restrito. Faça login como gestor para acessar o dashboard.")
         return
 
-    # Obter controller do session_state
-    dashboard_controller = st.session_state.get('dashboard_controller')
+    # Obter service do session_state
+    dashboard_service = st.session_state.get('dashboard_service')
 
-    if not dashboard_controller:
-        st.error("❌ Dashboard não disponível. Controller não inicializado.")
+    if not dashboard_service:
+        st.error("❌ Dashboard não disponível. Service não inicializado.")
         return
 
     st.title("📊 Dashboard de Gestão")
     st.markdown("---")
 
     # Quick Cards - Estatísticas principais
-    render_quick_cards(dashboard_controller)
+    render_quick_cards(dashboard_service)
 
     st.markdown("---")
 
     # Controle de Presença
-    render_presence_control(dashboard_controller)
+    render_presence_control(dashboard_service)
 
     st.markdown("---")
 
@@ -41,33 +37,33 @@ def app():
     col1, col2 = st.columns(2)
 
     with col1:
-        render_access_timeline_chart(dashboard_controller)
+        render_access_timeline_chart(dashboard_service)
 
     with col2:
-        render_access_by_hour_chart(dashboard_controller)
+        render_access_by_hour_chart(dashboard_service)
 
     st.markdown("---")
 
     col3, col4 = st.columns(2)
 
     with col3:
-        render_success_rate_chart(dashboard_controller)
+        render_success_rate_chart(dashboard_service)
 
     with col4:
-        render_top_users_chart(dashboard_controller)
+        render_top_users_chart(dashboard_service)
 
     st.markdown("---")
 
     # Gráfico de notificações
-    render_notifications_chart(dashboard_controller)
+    render_notifications_chart(dashboard_service)
 
 
-def render_quick_cards(dashboard_controller):
+def render_quick_cards(dashboard_service):
     """Renderiza os cards com estatísticas rápidas"""
     st.subheader("📈 Visão Geral")
 
-    # Obter dados do controller
-    result = dashboard_controller.get_quick_stats()
+    # Obter dados do service
+    result = dashboard_service.get_quick_stats()
 
     if not result.get('success'):
         st.error(f"❌ {result.get('message', 'Erro ao carregar estatísticas')}")
@@ -143,60 +139,157 @@ def render_quick_cards(dashboard_controller):
         )
 
 
-def render_presence_control(dashboard_controller):
-    """Renderiza o controle de presença (entrada/saída)"""
+def render_presence_control(dashboard_service):
+    """Renderiza o controle de presença (entrada/saída) para todos os usuários"""
     st.subheader("👥 Controle de Presença")
 
-    # Obter dados do controller
-    result = dashboard_controller.get_present_users()
+    # Filtro de data
+    col_filter1, col_filter2, col_filter3 = st.columns([2, 2, 1])
 
-    if not result.get('success'):
-        st.error(
-            f"❌ {result.get('message', 'Erro ao carregar usuários presentes')}")
-        return
+    with col_filter1:
+        date_option = st.selectbox(
+            "Selecionar Data",
+            ["Hoje", "Ontem", "Escolher data"],
+            key="date_selector"
+        )
 
-    present_users = result.get('data', [])
-    count = result.get('count', 0)
+    selected_date = None
+    with col_filter2:
+        if date_option == "Hoje":
+            from datetime import date
+            selected_date = None  # None usa CURDATE() no SQL
+            display_date = date.today().strftime("%d/%m/%Y")
+        elif date_option == "Ontem":
+            from datetime import date, timedelta
+            yesterday = date.today() - timedelta(days=1)
+            selected_date = yesterday.strftime("%Y-%m-%d")
+            display_date = yesterday.strftime("%d/%m/%Y")
+        else:  # Escolher data
+            from datetime import date
+            custom_date = st.date_input(
+                "Data",
+                value=date.today(),
+                key="custom_date"
+            )
+            selected_date = custom_date.strftime("%Y-%m-%d")
+            display_date = custom_date.strftime("%d/%m/%Y")
 
-    col1, col2 = st.columns([3, 1])
-
-    with col1:
-        st.info(f"**{count} usuários presentes no momento**")
-
-    with col2:
+    with col_filter3:
         if st.button("🔄 Atualizar", key="refresh_presence"):
             st.rerun()
 
-    if not present_users:
-        st.info("Nenhum usuário presente no momento.")
+    # Obter dados do service
+    result = dashboard_service.get_all_users_attendance(selected_date)
+
+    if not result.get('success'):
+        st.error(
+            f"❌ {result.get('message', 'Erro ao carregar dados de presença')}")
         return
 
-    # Exibir tabela de usuários presentes
-    df_present = pd.DataFrame(present_users)
+    all_users = result.get('data', [])
+    total_count = result.get('total_count', 0)
+    present_count = result.get('present_count', 0)
+    absent_count = result.get('absent_count', 0)
+    left_count = result.get('left_count', 0)
 
-    # Formatar a tabela
-    df_display = df_present[['name', 'position',
-                             'last_entry_time', 'status']].copy()
-    df_display.columns = ['Nome', 'Cargo', 'Entrada', 'Status']
+    # Exibir estatísticas
+    col1, col2, col3, col4 = st.columns(4)
 
-    # Adicionar ícone de status
-    df_display['Status'] = df_display['Status'].apply(
-        lambda x: "🟢 Presente" if x == "present" else "🔴 Ausente"
+    with col1:
+        st.metric(
+            label=f"📅 {display_date}",
+            value=f"{total_count} usuários",
+            help="Total de usuários aprovados"
+        )
+
+    with col2:
+        st.metric(
+            label="🟢 Presentes",
+            value=present_count,
+            help="Usuários que entraram e não saíram"
+        )
+
+    with col3:
+        st.metric(
+            label="🟡 Saíram",
+            value=left_count,
+            help="Usuários que já saíram"
+        )
+
+    with col4:
+        st.metric(
+            label="🔴 Ausentes",
+            value=absent_count,
+            help="Usuários que não registraram entrada",
+            delta=f"-{absent_count}" if absent_count > 0 else "0",
+            delta_color="inverse"
+        )
+
+    if not all_users:
+        st.info("Nenhum usuário cadastrado.")
+        return
+
+    # Preparar dados para exibição
+    df_users = pd.DataFrame(all_users)
+
+    # Formatar horários
+    def format_time(time_value):
+        if pd.isna(time_value) or time_value is None:
+            return "-"
+        if isinstance(time_value, str):
+            from datetime import datetime
+            try:
+                dt = datetime.fromisoformat(time_value)
+                return dt.strftime("%H:%M:%S")
+            except:
+                return time_value
+        return str(time_value)
+
+    # Criar DataFrame de exibição
+    df_display = pd.DataFrame({
+        'Nome': df_users['name'],
+        'Cargo': df_users['position'],
+        'Entrada': df_users['last_entry_time'].apply(format_time),
+        'Saída': df_users['last_exit_time'].apply(format_time),
+        'Acessos': df_users['access_count'],
+        'Status': df_users['status'].apply(lambda x:
+            '🟢 Presente' if x == 'Presente' else
+            '🟡 Saiu' if x == 'Saiu' else
+            '🔴 Ausente'
+        )
+    })
+
+    # Opções de filtro
+    status_filter = st.multiselect(
+        "Filtrar por Status",
+        ['🟢 Presente', '🟡 Saiu', '🔴 Ausente'],
+        default=['🟢 Presente', '🟡 Saiu', '🔴 Ausente'],
+        key="status_filter"
     )
 
+    # Aplicar filtro
+    if status_filter:
+        df_filtered = df_display[df_display['Status'].isin(status_filter)]
+    else:
+        df_filtered = df_display
+
+    # Exibir tabela
     st.dataframe(
-        df_display,
-        use_container_width=True,
+        df_filtered,
+        width='stretch',
         hide_index=True
     )
 
+    # Informações adicionais
+    st.caption(f"Total exibido: {len(df_filtered)} de {len(df_display)} usuários")
 
-def render_access_timeline_chart(dashboard_controller):
+
+def render_access_timeline_chart(dashboard_service):
     """Gráfico de linha: Acessos ao longo do tempo (últimos 30 dias)"""
     st.subheader("📅 Acessos nos Últimos 30 Dias")
 
-    # Obter dados do controller
-    result = dashboard_controller.get_access_timeline_data(days=30)
+    # Obter dados do service
+    result = dashboard_service.get_access_timeline(days=30)
 
     if not result.get('success'):
         st.error(f"❌ {result.get('message', 'Erro ao carregar dados')}")
@@ -244,15 +337,15 @@ def render_access_timeline_chart(dashboard_controller):
         height=400
     )
 
-    st.plotly_chart(fig, use_container_width=True)
+    st.plotly_chart(fig, width='stretch')
 
 
-def render_access_by_hour_chart(dashboard_controller):
+def render_access_by_hour_chart(dashboard_service):
     """Gráfico de barras: Acessos por hora do dia (hoje)"""
     st.subheader("🕐 Acessos por Hora (Hoje)")
 
-    # Obter dados do controller
-    result = dashboard_controller.get_hourly_distribution_data()
+    # Obter dados do service
+    result = dashboard_service.get_hourly_access_distribution()
 
     if not result.get('success'):
         st.error(f"❌ {result.get('message', 'Erro ao carregar dados')}")
@@ -290,15 +383,15 @@ def render_access_by_hour_chart(dashboard_controller):
         height=400
     )
 
-    st.plotly_chart(fig, use_container_width=True)
+    st.plotly_chart(fig, width='stretch')
 
 
-def render_success_rate_chart(dashboard_controller):
+def render_success_rate_chart(dashboard_service):
     """Gráfico de área: Taxa de sucesso ao longo do tempo"""
     st.subheader("📈 Taxa de Sucesso de Reconhecimento")
 
-    # Obter dados do controller
-    result = dashboard_controller.get_success_rate_data(days=30)
+    # Obter dados do service
+    result = dashboard_service.get_success_rate_trend(days=30)
 
     if not result.get('success'):
         st.error(f"❌ {result.get('message', 'Erro ao carregar dados')}")
@@ -330,15 +423,15 @@ def render_success_rate_chart(dashboard_controller):
         height=400
     )
 
-    st.plotly_chart(fig, use_container_width=True)
+    st.plotly_chart(fig, width='stretch')
 
 
-def render_top_users_chart(dashboard_controller):
+def render_top_users_chart(dashboard_service):
     """Gráfico de barras horizontal: Top 10 usuários com mais acessos"""
     st.subheader("🏆 Top 10 Usuários")
 
-    # Obter dados do controller
-    result = dashboard_controller.get_top_users_data(limit=10)
+    # Obter dados do service
+    result = dashboard_service.get_top_active_users(limit=10)
 
     if not result.get('success'):
         st.error(f"❌ {result.get('message', 'Erro ao carregar dados')}")
@@ -366,15 +459,15 @@ def render_top_users_chart(dashboard_controller):
         height=400
     )
 
-    st.plotly_chart(fig, use_container_width=True)
+    st.plotly_chart(fig, width='stretch')
 
 
-def render_notifications_chart(dashboard_controller):
+def render_notifications_chart(dashboard_service):
     """Gráfico de pizza: Distribuição de notificações por tipo"""
     st.subheader("🔔 Notificações por Tipo")
 
-    # Obter dados do controller
-    result = dashboard_controller.get_notification_distribution_data(days=30)
+    # Obter dados do service
+    result = dashboard_service.get_notification_distribution(days=30)
 
     if not result.get('success'):
         st.error(f"❌ {result.get('message', 'Erro ao carregar dados')}")
@@ -400,4 +493,4 @@ def render_notifications_chart(dashboard_controller):
     fig.update_traces(textposition='inside', textinfo='percent+label')
     fig.update_layout(height=400)
 
-    st.plotly_chart(fig, use_container_width=True)
+    st.plotly_chart(fig, width='stretch')

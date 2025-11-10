@@ -71,10 +71,6 @@ class DashboardService:
         try:
             users = self.dashboard_repository.get_present_users()
 
-            # Adicionar status 'present' para todos
-            for user in users:
-                user['status'] = 'present'
-
             return {
                 'success': True,
                 'data': users,
@@ -86,6 +82,43 @@ class DashboardService:
                 'message': f'Erro ao obter usuários presentes: {str(e)}',
                 'data': [],
                 'count': 0
+            }
+
+    def get_all_users_attendance(self, date: str = None):
+        """
+        Retorna todos os usuários aprovados com status de presença
+
+        Args:
+            date: Data no formato 'YYYY-MM-DD'. Se None, usa data atual
+
+        Returns:
+            dict: Lista de todos os usuários com status de presença
+        """
+        try:
+            users = self.dashboard_repository.get_all_users_attendance(date)
+
+            # Contar estatísticas
+            present_count = sum(1 for u in users if u.get('status') == 'Presente')
+            absent_count = sum(1 for u in users if u.get('status') == 'Ausente')
+            left_count = sum(1 for u in users if u.get('status') == 'Saiu')
+
+            return {
+                'success': True,
+                'data': users,
+                'total_count': len(users),
+                'present_count': present_count,
+                'absent_count': absent_count,
+                'left_count': left_count
+            }
+        except Exception as e:
+            return {
+                'success': False,
+                'message': f'Erro ao obter presença de usuários: {str(e)}',
+                'data': [],
+                'total_count': 0,
+                'present_count': 0,
+                'absent_count': 0,
+                'left_count': 0
             }
 
     def get_access_timeline(self, days=30):
@@ -203,31 +236,4 @@ class DashboardService:
                 'success': False,
                 'message': f'Erro ao obter distribuição de notificações: {str(e)}',
                 'data': []
-            }
-
-    def get_all_dashboard_data(self):
-        """
-        Retorna todos os dados do dashboard de uma vez (otimização)
-
-        Returns:
-            dict: Todos os dados necessários para renderizar o dashboard
-        """
-        try:
-            return {
-                'success': True,
-                'data': {
-                    'quick_stats': self.get_quick_stats(),
-                    'present_users': self.get_present_users(),
-                    'access_timeline': self.get_access_timeline(30),
-                    'hourly_distribution': self.get_hourly_access_distribution(),
-                    'success_rate': self.get_success_rate_trend(30),
-                    'top_users': self.get_top_active_users(10),
-                    'notifications': self.get_notification_distribution(30)
-                }
-            }
-        except Exception as e:
-            return {
-                'success': False,
-                'message': f'Erro ao obter dados do dashboard: {str(e)}',
-                'data': {}
             }

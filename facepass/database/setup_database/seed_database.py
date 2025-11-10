@@ -78,8 +78,7 @@ def seed_users(cursor, count=20):
         cpf = generate_cpf()
         position = random.choice(POSITIONS)
         photo = create_placeholder_photo()
-
-        # 70% aprovados, 20% pendentes, 10% negados
+        
         rand = random.random()
         if rand < 0.7:
             approved = True
