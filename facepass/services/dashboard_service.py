@@ -42,23 +42,6 @@ class DashboardService:
                 'data': {}
             }
 
-    def get_present_users(self):
-        try:
-            users = self.dashboard_repository.get_present_users()
-
-            return {
-                'success': True,
-                'data': users,
-                'count': len(users)
-            }
-        except Exception as e:
-            return {
-                'success': False,
-                'message': f'Erro ao obter usuários presentes: {str(e)}',
-                'data': [],
-                'count': 0
-            }
-
     def get_all_users_attendance(self, date: str = None):
         """
         Retorna todos os usuários aprovados com status de presença

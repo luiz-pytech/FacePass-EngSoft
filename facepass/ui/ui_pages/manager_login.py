@@ -138,7 +138,7 @@ def app():
 
     with st.expander("🔒 Segurança"):
         st.markdown("""
-            - As senhas são armazenadas usando hash SHA-256
+            - As senhas são armazenadas usando hash bcrypt
             - Nunca compartilhe suas credenciais
             - Faça logout ao finalizar o uso
             - Utilize senhas fortes e únicas

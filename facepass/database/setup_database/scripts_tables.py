@@ -144,7 +144,6 @@ def create_database():
     print("  3. accessRegisters")
     print("  4. notifications")
     print("  5. face_encoding")
-    print("\n💡 Próximo passo: Execute 'streamlit run facepass/ui/main.py'\n")
 
 
 if __name__ == "__main__":

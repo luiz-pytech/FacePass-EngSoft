@@ -47,33 +47,6 @@ class DashboardRepository:
         result = self.executor.execute_query_one(query)
         return result['count'] if result else 0
 
-    def get_present_users(self) -> List[Dict[str, Any]]:
-        query = """
-            SELECT
-                u.name,
-                u.position,
-                last_access.created_at as last_entry_time
-            FROM users u
-            INNER JOIN (
-                SELECT
-                    ar.user_id,
-                    ar.type_access,
-                    ar.created_at,
-                    ar.access_allowed
-                FROM accessRegisters ar
-                INNER JOIN (
-                    SELECT user_id, MAX(created_at) as max_time
-                    FROM accessRegisters
-                    WHERE access_allowed = TRUE
-                    GROUP BY user_id
-                ) latest ON ar.user_id = latest.user_id AND ar.created_at = latest.max_time
-            ) last_access ON u.id = last_access.user_id
-            WHERE u.approved = TRUE
-            AND last_access.type_access = 'entrada'
-            ORDER BY u.name
-        """
-        return self.executor.execute_query(query)
-
     def get_all_users_attendance(self, date: str = "") -> List[Dict[str, Any]]:
         if not date:
             date_condition = "DATE(created_at) = CURDATE()"

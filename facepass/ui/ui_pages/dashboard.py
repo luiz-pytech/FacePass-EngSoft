@@ -162,7 +162,7 @@ def render_presence_control(dashboard_service):
     with col_filter2:
         if date_option == "Hoje":
             from datetime import date
-            selected_date = None  # None usa CURDATE() no SQL
+            selected_date = None 
             display_date = date.today().strftime("%d/%m/%Y")
         elif date_option == "Ontem":
             from datetime import date, timedelta
@@ -342,7 +342,7 @@ def render_access_timeline_chart(dashboard_service):
         height=400
     )
 
-    st.plotly_chart(fig, use_container_width=True)
+    st.plotly_chart(fig, width='stretch')
 
 
 def render_access_by_hour_chart(dashboard_service):
@@ -388,7 +388,7 @@ def render_access_by_hour_chart(dashboard_service):
         height=400
     )
 
-    st.plotly_chart(fig, use_container_width=True)
+    st.plotly_chart(fig, width='stretch')
 
 
 def render_success_rate_chart(dashboard_service):
@@ -428,7 +428,7 @@ def render_success_rate_chart(dashboard_service):
         height=400
     )
 
-    st.plotly_chart(fig, use_container_width=True)
+    st.plotly_chart(fig, width='stretch')
 
 
 def render_top_users_chart(dashboard_service):
@@ -464,7 +464,7 @@ def render_top_users_chart(dashboard_service):
         height=400
     )
 
-    st.plotly_chart(fig, use_container_width=True)
+    st.plotly_chart(fig, width='stretch')
 
 
 def render_notifications_chart(dashboard_service):
@@ -498,7 +498,7 @@ def render_notifications_chart(dashboard_service):
     fig.update_traces(textposition='inside', textinfo='percent+label')
     fig.update_layout(height=400)
 
-    st.plotly_chart(fig, use_container_width=True)
+    st.plotly_chart(fig, width='stretch')
 
 
 def render_overtime_section(dashboard_service):
@@ -602,7 +602,7 @@ def render_overtime_section(dashboard_service):
             showlegend=False
         )
 
-        st.plotly_chart(fig, use_container_width=True)
+        st.plotly_chart(fig, width='stretch')
 
     with col_table:
         st.subheader("💰 Custo Individual")
