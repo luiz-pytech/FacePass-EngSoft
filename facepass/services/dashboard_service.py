@@ -4,39 +4,20 @@ Dashboard Service - Lógica de negócio para o dashboard de gestão
 
 
 class DashboardService:
-    """Service para gerenciar lógica de negócio do dashboard"""
-
     def __init__(self, dashboard_repository, user_service, notification_service):
-        """
-        Inicializa o service com os repositories necessários
-
-        Args:
-            dashboard_repository: Repository do dashboard
-            user_service: Service de usuários (para estatísticas)
-            notification_service: Service de notificações
-        """
         self.dashboard_repository = dashboard_repository
         self.user_service = user_service
         self.notification_service = notification_service
 
     def get_quick_stats(self):
-        """
-        Retorna estatísticas rápidas para os quick cards
-
-        Returns:
-            dict: Dicionário com todas as estatísticas
-        """
         try:
-            # Obter estatísticas de usuários
             user_stats = self.user_service.get_statistics()
 
-            # Obter estatísticas de acessos
             today_total = self.dashboard_repository.get_today_accesses_count()
             today_allowed = self.dashboard_repository.get_today_allowed_count()
             today_denied = self.dashboard_repository.get_today_denied_count()
             unread_notifications = self.dashboard_repository.get_unread_notifications_count()
 
-            # Calcular taxa de aprovação
             total_users = user_stats.get('total', 0)
             approved_users = user_stats.get('approved', 0)
             approval_rate = (approved_users / total_users * 100) if total_users > 0 else 0.0
@@ -62,12 +43,6 @@ class DashboardService:
             }
 
     def get_present_users(self):
-        """
-        Retorna lista de usuários atualmente presentes
-
-        Returns:
-            dict: Lista de usuários presentes com informações adicionais
-        """
         try:
             users = self.dashboard_repository.get_present_users()
 
@@ -122,15 +97,6 @@ class DashboardService:
             }
 
     def get_access_timeline(self, days=30):
-        """
-        Retorna dados para o gráfico de linha temporal de acessos
-
-        Args:
-            days: Número de dias para análise
-
-        Returns:
-            dict: Dados formatados para o gráfico
-        """
         try:
             data = self.dashboard_repository.get_accesses_by_day(days)
 
@@ -146,12 +112,6 @@ class DashboardService:
             }
 
     def get_hourly_access_distribution(self):
-        """
-        Retorna distribuição de acessos por hora (hoje)
-
-        Returns:
-            dict: Dados formatados para o gráfico
-        """
         try:
             data = self.dashboard_repository.get_accesses_by_hour()
 
@@ -167,15 +127,6 @@ class DashboardService:
             }
 
     def get_success_rate_trend(self, days=30):
-        """
-        Retorna tendência de taxa de sucesso
-
-        Args:
-            days: Número de dias para análise
-
-        Returns:
-            dict: Dados formatados para o gráfico
-        """
         try:
             data = self.dashboard_repository.get_success_rate_by_day(days)
 
@@ -191,15 +142,6 @@ class DashboardService:
             }
 
     def get_top_active_users(self, limit=10):
-        """
-        Retorna ranking de usuários mais ativos
-
-        Args:
-            limit: Número de usuários a retornar
-
-        Returns:
-            dict: Lista de top usuários
-        """
         try:
             data = self.dashboard_repository.get_top_users(limit)
 
@@ -215,15 +157,6 @@ class DashboardService:
             }
 
     def get_notification_distribution(self, days=30):
-        """
-        Retorna distribuição de notificações por tipo
-
-        Args:
-            days: Número de dias para análise
-
-        Returns:
-            dict: Dados de notificações agrupadas por tipo
-        """
         try:
             data = self.dashboard_repository.get_notifications_by_type(days)
 
