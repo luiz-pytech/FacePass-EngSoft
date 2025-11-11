@@ -118,8 +118,8 @@ def create_database():
 
     if manager_count == 0:
         print("\n📝 Criando gestor padrão...")
-        import hashlib
-        default_password = hashlib.sha256("admin123".encode()).hexdigest()
+        import bcrypt
+        default_password = bcrypt.hashpw("admin123".encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
 
         cursor.execute("""
             INSERT INTO manager (name, email, password_hash)

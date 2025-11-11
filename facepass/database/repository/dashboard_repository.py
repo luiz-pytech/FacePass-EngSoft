@@ -48,6 +48,7 @@ class DashboardRepository:
         return result['count'] if result else 0
 
     def get_present_users(self) -> List[Dict[str, Any]]:
+        """Retorna apenas usuários presentes (última ação foi entrada)"""
         query = """
             SELECT
                 u.name,
@@ -71,6 +72,53 @@ class DashboardRepository:
             WHERE u.approved = TRUE
             AND last_access.type_access = 'entrada'
             ORDER BY u.name
+        """
+        return self.executor.execute_query(query)
+
+    def get_all_users_attendance(self, date: str = "") -> List[Dict[str, Any]]:
+        if not date:
+            date_condition = "DATE(created_at) = CURDATE()"
+        else:
+            date_condition = f"DATE(created_at) = '{date}'"
+
+        query = f"""
+            SELECT
+                u.id,
+                u.name,
+                u.position,
+                u.email,
+                COALESCE(attendance.last_entry, NULL) as last_entry_time,
+                COALESCE(attendance.last_exit, NULL) as last_exit_time,
+                COALESCE(attendance.total_accesses, 0) as access_count,
+                CASE
+                    WHEN attendance.last_entry IS NOT NULL AND
+                         (attendance.last_exit IS NULL OR attendance.last_entry > attendance.last_exit)
+                    THEN 'Presente'
+                    WHEN attendance.last_entry IS NULL
+                    THEN 'Ausente'
+                    ELSE 'Saiu'
+                END as status
+            FROM users u
+            LEFT JOIN (
+                SELECT
+                    user_id,
+                    MAX(CASE WHEN type_access = 'entrada' AND access_allowed = TRUE
+                        THEN created_at END) as last_entry,
+                    MAX(CASE WHEN type_access = 'saida' AND access_allowed = TRUE
+                        THEN created_at END) as last_exit,
+                    COUNT(*) as total_accesses
+                FROM accessRegisters
+                WHERE {date_condition}
+                GROUP BY user_id
+            ) attendance ON u.id = attendance.user_id
+            WHERE u.approved = TRUE
+            ORDER BY
+                CASE
+                    WHEN status = 'Presente' THEN 1
+                    WHEN status = 'Saiu' THEN 2
+                    ELSE 3
+                END,
+                u.name
         """
         return self.executor.execute_query(query)
 

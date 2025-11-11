@@ -59,6 +59,43 @@ class DashboardService:
                 'count': 0
             }
 
+    def get_all_users_attendance(self, date: str = None):
+        """
+        Retorna todos os usuários aprovados com status de presença
+
+        Args:
+            date: Data no formato 'YYYY-MM-DD'. Se None, usa data atual
+
+        Returns:
+            dict: Lista de todos os usuários com status de presença
+        """
+        try:
+            users = self.dashboard_repository.get_all_users_attendance(date)
+
+            # Contar estatísticas
+            present_count = sum(1 for u in users if u.get('status') == 'Presente')
+            absent_count = sum(1 for u in users if u.get('status') == 'Ausente')
+            left_count = sum(1 for u in users if u.get('status') == 'Saiu')
+
+            return {
+                'success': True,
+                'data': users,
+                'total_count': len(users),
+                'present_count': present_count,
+                'absent_count': absent_count,
+                'left_count': left_count
+            }
+        except Exception as e:
+            return {
+                'success': False,
+                'message': f'Erro ao obter presença de usuários: {str(e)}',
+                'data': [],
+                'total_count': 0,
+                'present_count': 0,
+                'absent_count': 0,
+                'left_count': 0
+            }
+
     def get_access_timeline(self, days=30):
         try:
             data = self.dashboard_repository.get_accesses_by_day(days)

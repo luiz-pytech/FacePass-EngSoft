@@ -11,3 +11,4 @@ pillow
 setuptools
 plotly
 pandas
+bcrypt
