@@ -48,7 +48,6 @@ class DashboardRepository:
         return result['count'] if result else 0
 
     def get_present_users(self) -> List[Dict[str, Any]]:
-        """Retorna apenas usuários presentes (última ação foi entrada)"""
         query = """
             SELECT
                 u.name,
@@ -178,11 +177,7 @@ class DashboardRepository:
             ORDER BY access_count DESC
             LIMIT %s
         """
-        cursor = self.connection.cursor(dictionary=True)
-        cursor.execute(query, (limit,))
-        results = cursor.fetchall()
-        cursor.close()
-        return results
+        return self.executor.execute_query(query, (limit,))
 
     def get_notifications_by_type(self, days=30):
         query = """
@@ -196,8 +191,77 @@ class DashboardRepository:
             GROUP BY type_notification
             ORDER BY count DESC
         """
-        cursor = self.connection.cursor(dictionary=True)
-        cursor.execute(query, (days,))
-        results = cursor.fetchall()
-        cursor.close()
-        return results
+        return self.executor.execute_query(query, (days,))
+
+    def get_overtime_by_user(self, days: int = 30) -> List[Dict[str, Any]]:
+        query = """
+            WITH DailyHours AS (
+                SELECT
+                    u.id as user_id,
+                    u.name,
+                    u.position,
+                    DATE(ar.created_at) as work_date,
+                    MIN(CASE WHEN ar.type_access = 'entrada' AND ar.access_allowed = TRUE
+                        THEN ar.created_at END) as first_entry,
+                    MAX(CASE WHEN ar.type_access = 'saida' AND ar.access_allowed = TRUE
+                        THEN ar.created_at END) as last_exit
+                FROM users u
+                INNER JOIN accessRegisters ar ON u.id = ar.user_id
+                WHERE u.approved = TRUE
+                AND ar.created_at >= DATE_SUB(CURDATE(), INTERVAL %s DAY)
+                GROUP BY u.id, u.name, u.position, DATE(ar.created_at)
+                HAVING first_entry IS NOT NULL AND last_exit IS NOT NULL
+            ),
+            HoursCalculated AS (
+                SELECT
+                    user_id,
+                    name,
+                    position,
+                    work_date,
+                    first_entry,
+                    last_exit,
+                    TIMESTAMPDIFF(MINUTE, first_entry, last_exit) / 60.0 as hours_worked,
+                    GREATEST(0, (TIMESTAMPDIFF(MINUTE, first_entry, last_exit) / 60.0) - 8) as overtime_hours
+                FROM DailyHours
+            )
+            SELECT
+                user_id,
+                name,
+                position,
+                COUNT(work_date) as days_worked,
+                ROUND(SUM(hours_worked), 2) as total_hours_worked,
+                ROUND(SUM(overtime_hours), 2) as total_overtime_hours
+            FROM HoursCalculated
+            WHERE overtime_hours > 0
+            GROUP BY user_id, name, position
+            HAVING total_overtime_hours > 0
+            ORDER BY total_overtime_hours DESC
+        """
+        return self.executor.execute_query(query, (days,))
+
+    def get_daily_overtime_detail(self, user_id: int, days: int = 30) -> List[Dict[str, Any]]:
+        query = """
+            WITH DailyHours AS (
+                SELECT
+                    DATE(ar.created_at) as work_date,
+                    MIN(CASE WHEN ar.type_access = 'entrada' AND ar.access_allowed = TRUE
+                        THEN ar.created_at END) as first_entry,
+                    MAX(CASE WHEN ar.type_access = 'saida' AND ar.access_allowed = TRUE
+                        THEN ar.created_at END) as last_exit
+                FROM accessRegisters ar
+                WHERE ar.user_id = %s
+                AND ar.created_at >= DATE_SUB(CURDATE(), INTERVAL %s DAY)
+                GROUP BY DATE(ar.created_at)
+                HAVING first_entry IS NOT NULL AND last_exit IS NOT NULL
+            )
+            SELECT
+                work_date,
+                first_entry,
+                last_exit,
+                ROUND(TIMESTAMPDIFF(MINUTE, first_entry, last_exit) / 60.0, 2) as hours_worked,
+                ROUND(GREATEST(0, (TIMESTAMPDIFF(MINUTE, first_entry, last_exit) / 60.0) - 8), 2) as overtime_hours
+            FROM DailyHours
+            WHERE TIMESTAMPDIFF(MINUTE, first_entry, last_exit) / 60.0 > 8
+            ORDER BY work_date DESC
+        """
+        return self.executor.execute_query(query, (user_id, days))

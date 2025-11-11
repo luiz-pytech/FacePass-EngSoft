@@ -57,6 +57,11 @@ def app():
     # Gráfico de notificações
     render_notifications_chart(dashboard_service)
 
+    st.markdown("---")
+
+    # Seção de Horas Extras
+    render_overtime_section(dashboard_service)
+
 
 def render_quick_cards(dashboard_service):
     """Renderiza os cards com estatísticas rápidas"""
@@ -494,3 +499,171 @@ def render_notifications_chart(dashboard_service):
     fig.update_layout(height=400)
 
     st.plotly_chart(fig, width='stretch')
+
+
+def render_overtime_section(dashboard_service):
+    """Renderiza a seção de Horas Extras"""
+    st.subheader("⏰ Análise de Horas Extras")
+
+    # Seletor de período
+    col_period, col_refresh = st.columns([3, 1])
+
+    with col_period:
+        period_days = st.selectbox(
+            "Período de Análise",
+            [7, 15, 30, 60, 90],
+            index=2,  # Padrão: 30 dias
+            key="overtime_period",
+            format_func=lambda x: f"Últimos {x} dias"
+        )
+
+    with col_refresh:
+        if st.button("🔄 Atualizar", key="refresh_overtime"):
+            st.rerun()
+
+    # Obter dados do service
+    result = dashboard_service.get_overtime_statistics(days=period_days)
+
+    if not result.get('success'):
+        st.error(f"❌ {result.get('message', 'Erro ao carregar dados de horas extras')}")
+        return
+
+    overtime_data = result.get('data', [])
+    total_overtime_hours = result.get('total_overtime_hours', 0)
+    overtime_rate = result.get('overtime_rate', 30.0)
+    total_cost = result.get('total_cost', 0)
+
+    # Cards de resumo
+    col1, col2, col3, col4 = st.columns(4)
+
+    with col1:
+        st.metric(
+            label="💰 Custo Total de Horas Extras",
+            value=f"R$ {total_cost:,.2f}",
+            help=f"Custo total com horas extras nos últimos {period_days} dias"
+        )
+
+    with col2:
+        st.metric(
+            label="⏱️ Total de Horas Extras",
+            value=f"{total_overtime_hours:.2f}h",
+            help="Soma de todas as horas extras trabalhadas"
+        )
+
+    with col3:
+        st.metric(
+            label="💵 Valor por Hora Extra",
+            value=f"R$ {overtime_rate:.2f}",
+            help="Valor pago por hora extra trabalhada"
+        )
+
+    with col4:
+        employees_with_overtime = len(overtime_data)
+        st.metric(
+            label="👥 Funcionários com H.E.",
+            value=employees_with_overtime,
+            help="Número de funcionários que fizeram horas extras"
+        )
+
+    if not overtime_data:
+        st.info(f"Nenhuma hora extra registrada nos últimos {period_days} dias.")
+        return
+
+    st.markdown("---")
+
+    # Gráfico de Horas Extras por Funcionário
+    col_chart, col_table = st.columns([2, 1])
+
+    with col_chart:
+        st.subheader("📊 Horas Extras por Funcionário")
+
+        df_overtime = pd.DataFrame(overtime_data)
+
+        # Criar gráfico de barras horizontal
+        fig = go.Figure()
+
+        fig.add_trace(go.Bar(
+            y=df_overtime['name'],
+            x=df_overtime['total_overtime_hours'],
+            orientation='h',
+            marker_color='orange',
+            text=df_overtime['total_overtime_hours'].apply(lambda x: f"{x:.2f}h"),
+            textposition='auto',
+            hovertemplate='<b>%{y}</b><br>' +
+                          'Horas Extras: %{x:.2f}h<br>' +
+                          'Custo: R$ %{customdata:.2f}<extra></extra>',
+            customdata=df_overtime['total_overtime_hours'] * overtime_rate
+        ))
+
+        fig.update_layout(
+            xaxis_title="Horas Extras (h)",
+            yaxis_title="Funcionário",
+            height=max(400, len(overtime_data) * 30),  # Altura dinâmica
+            showlegend=False
+        )
+
+        st.plotly_chart(fig, width='stretch')
+
+    with col_table:
+        st.subheader("💰 Custo Individual")
+
+        # Criar DataFrame para tabela
+        df_cost = pd.DataFrame({
+            'Funcionário': df_overtime['name'],
+            'H. Extras': df_overtime['total_overtime_hours'].apply(lambda x: f"{x:.2f}h"),
+            'Custo': df_overtime['total_overtime_hours'].apply(lambda x: f"R$ {x * overtime_rate:,.2f}")
+        })
+
+        st.dataframe(
+            df_cost,
+            hide_index=True,
+            width='stretch'
+        )
+
+        # Informação adicional
+        st.caption(f"Total: {len(df_cost)} funcionário(s)")
+
+    st.markdown("---")
+
+    # Tabela detalhada
+    with st.expander("📋 Detalhes Completos de Horas Extras"):
+        df_detailed = pd.DataFrame({
+            'Nome': df_overtime['name'],
+            'Cargo': df_overtime['position'],
+            'Dias Trab.': df_overtime['days_worked'],
+            'H. Totais': df_overtime['total_hours_worked'].apply(lambda x: f"{x:.2f}h"),
+            'H. Extras': df_overtime['total_overtime_hours'].apply(lambda x: f"{x:.2f}h"),
+            'Custo H.E.': df_overtime['total_overtime_hours'].apply(lambda x: f"R$ {x * overtime_rate:,.2f}")
+        })
+
+        st.dataframe(
+            df_detailed,
+            hide_index=True,
+            width='stretch'
+        )
+
+        # Estatísticas adicionais
+        st.markdown("#### 📈 Estatísticas do Período")
+
+        col_stat1, col_stat2, col_stat3 = st.columns(3)
+
+        with col_stat1:
+            avg_overtime = total_overtime_hours / employees_with_overtime if employees_with_overtime > 0 else 0
+            st.metric(
+                "Média de H.E. por Funcionário",
+                f"{avg_overtime:.2f}h"
+            )
+
+        with col_stat2:
+            total_days_worked = df_overtime['days_worked'].sum()
+            st.metric(
+                "Total de Dias Trabalhados",
+                total_days_worked
+            )
+
+        with col_stat3:
+            max_overtime = df_overtime['total_overtime_hours'].max()
+            st.metric(
+                "Máximo de H.E. (Individual)",
+                f"{max_overtime:.2f}h"
+            )

@@ -170,3 +170,67 @@ class DashboardService:
                 'message': f'Erro ao obter distribuição de notificações: {str(e)}',
                 'data': []
             }
+
+    def get_overtime_statistics(self, days=30):
+        """
+        Retorna estatísticas de horas extras por funcionário.
+
+        Args:
+            days: Número de dias para análise (padrão: 30)
+
+        Returns:
+            dict: Dados de horas extras e custo total
+        """
+        try:
+            overtime_data = self.dashboard_repository.get_overtime_by_user(days)
+
+            # Valor da hora extra em R$
+            OVERTIME_RATE = 30.0
+
+            # Calcular custo total
+            total_overtime_hours = sum(user.get('total_overtime_hours', 0) for user in overtime_data)
+            total_cost = total_overtime_hours * OVERTIME_RATE
+
+            return {
+                'success': True,
+                'data': overtime_data,
+                'total_overtime_hours': round(total_overtime_hours, 2),
+                'overtime_rate': OVERTIME_RATE,
+                'total_cost': round(total_cost, 2),
+                'period_days': days
+            }
+        except Exception as e:
+            return {
+                'success': False,
+                'message': f'Erro ao obter estatísticas de horas extras: {str(e)}',
+                'data': [],
+                'total_overtime_hours': 0,
+                'overtime_rate': 30.0,
+                'total_cost': 0,
+                'period_days': days
+            }
+
+    def get_user_overtime_detail(self, user_id, days=30):
+        """
+        Retorna detalhes diários de horas extras para um usuário específico.
+
+        Args:
+            user_id: ID do usuário
+            days: Número de dias para análise
+
+        Returns:
+            dict: Detalhes diários de horas extras
+        """
+        try:
+            detail_data = self.dashboard_repository.get_daily_overtime_detail(user_id, days)
+
+            return {
+                'success': True,
+                'data': detail_data
+            }
+        except Exception as e:
+            return {
+                'success': False,
+                'message': f'Erro ao obter detalhes de horas extras: {str(e)}',
+                'data': []
+            }
