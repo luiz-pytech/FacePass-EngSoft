@@ -587,12 +587,12 @@ def render_overtime_section(dashboard_service):
             x=df_overtime['total_overtime_hours'],
             orientation='h',
             marker_color='orange',
-            text=df_overtime['total_overtime_hours'].apply(lambda x: f"{x:.2f}h"),
+            text=df_overtime['total_overtime_hours'].apply(lambda x: f"{float(x):.2f}h"),
             textposition='auto',
             hovertemplate='<b>%{y}</b><br>' +
                           'Horas Extras: %{x:.2f}h<br>' +
                           'Custo: R$ %{customdata:.2f}<extra></extra>',
-            customdata=df_overtime['total_overtime_hours'] * overtime_rate
+            customdata=df_overtime['total_overtime_hours'].apply(lambda x: float(x) * overtime_rate)
         ))
 
         fig.update_layout(
@@ -610,8 +610,8 @@ def render_overtime_section(dashboard_service):
         # Criar DataFrame para tabela
         df_cost = pd.DataFrame({
             'Funcionário': df_overtime['name'],
-            'H. Extras': df_overtime['total_overtime_hours'].apply(lambda x: f"{x:.2f}h"),
-            'Custo': df_overtime['total_overtime_hours'].apply(lambda x: f"R$ {x * overtime_rate:,.2f}")
+            'H. Extras': df_overtime['total_overtime_hours'].apply(lambda x: f"{float(x):.2f}h"),
+            'Custo': df_overtime['total_overtime_hours'].apply(lambda x: f"R$ {float(x) * overtime_rate:,.2f}")
         })
 
         st.dataframe(
@@ -631,9 +631,9 @@ def render_overtime_section(dashboard_service):
             'Nome': df_overtime['name'],
             'Cargo': df_overtime['position'],
             'Dias Trab.': df_overtime['days_worked'],
-            'H. Totais': df_overtime['total_hours_worked'].apply(lambda x: f"{x:.2f}h"),
-            'H. Extras': df_overtime['total_overtime_hours'].apply(lambda x: f"{x:.2f}h"),
-            'Custo H.E.': df_overtime['total_overtime_hours'].apply(lambda x: f"R$ {x * overtime_rate:,.2f}")
+            'H. Totais': df_overtime['total_hours_worked'].apply(lambda x: f"{float(x):.2f}h"),
+            'H. Extras': df_overtime['total_overtime_hours'].apply(lambda x: f"{float(x):.2f}h"),
+            'Custo H.E.': df_overtime['total_overtime_hours'].apply(lambda x: f"R$ {float(x) * overtime_rate:,.2f}")
         })
 
         st.dataframe(
@@ -662,7 +662,7 @@ def render_overtime_section(dashboard_service):
             )
 
         with col_stat3:
-            max_overtime = df_overtime['total_overtime_hours'].max()
+            max_overtime = float(df_overtime['total_overtime_hours'].max())
             st.metric(
                 "Máximo de H.E. (Individual)",
                 f"{max_overtime:.2f}h"

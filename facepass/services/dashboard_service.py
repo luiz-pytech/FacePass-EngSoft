@@ -187,8 +187,8 @@ class DashboardService:
             # Valor da hora extra em R$
             OVERTIME_RATE = 30.0
 
-            # Calcular custo total
-            total_overtime_hours = sum(user.get('total_overtime_hours', 0) for user in overtime_data)
+            # Calcular custo total (convertendo Decimal para float)
+            total_overtime_hours = sum(float(user.get('total_overtime_hours', 0)) for user in overtime_data)
             total_cost = total_overtime_hours * OVERTIME_RATE
 
             return {
