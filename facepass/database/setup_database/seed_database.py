@@ -122,13 +122,11 @@ def seed_access_registers(cursor, users):
         date = now - timedelta(days=day_offset)
 
         # Apenas dias úteis (segunda a sexta)
-        if date.weekday() >= 5:  # 5=sábado, 6=domingo
+        if date.weekday() >= 5:
             continue
 
-        # Cada usuário tem 80% de chance de ter acessado neste dia
         for user in approved_users:
             if random.random() < 0.8:
-                # Horário de entrada (entre 7h e 9h30)
                 entry_hour = random.randint(7, 9)
                 entry_minute = random.randint(0, 59)
                 entry_time = date.replace(
@@ -149,9 +147,7 @@ def seed_access_registers(cursor, users):
                     'time': entry_time
                 })
 
-                # 90% de chance de ter saída no mesmo dia
                 if random.random() < 0.9:
-                    # Horário de saída (entre 17h e 19h)
                     exit_hour = random.randint(17, 18)
                     exit_minute = random.randint(0, 59)
                     exit_time = date.replace(
@@ -316,7 +312,6 @@ def seed_database():
         conn.commit()
 
         # Estatísticas finais
-        print("\n" + "="*60)
         print("✅ SEED COMPLETO!")
         print("="*60)
         print(f"\n📊 Resumo:")
@@ -334,9 +329,7 @@ def seed_database():
             f"     - Lidas: {len([n for n in notifications if n['is_read']])}")
         print(
             f"     - Não lidas: {len([n for n in notifications if not n['is_read']])}")
-
-        print("\n💡 Execute 'streamlit run facepass/ui/app.py' para visualizar!")
-        print("="*60 + "\n")
+        
 
     except Exception as e:
         print(f"\n❌ Erro durante seed: {str(e)}")
