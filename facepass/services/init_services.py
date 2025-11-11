@@ -9,6 +9,8 @@ from facepass.database.repository.face_encoding_repository import FaceEncodingRe
 from facepass.database.repository.manager_repository import ManagerRepository
 from facepass.database.repository.dashboard_repository import DashboardRepository
 from facepass.services.access_service import AccessService
+from facepass.services.user_service import UsuarioService
+from facepass.services.notification_service import NotificationService
 from facepass.services.face_recognition_service import FaceRecognitionService
 from facepass.services.manager_service import ManagerService
 from facepass.services.dashboard_service import DashboardService
