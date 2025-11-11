@@ -342,7 +342,7 @@ def render_access_timeline_chart(dashboard_service):
         height=400
     )
 
-    st.plotly_chart(fig, width='stretch')
+    st.plotly_chart(fig, use_container_width=True)
 
 
 def render_access_by_hour_chart(dashboard_service):
@@ -388,7 +388,7 @@ def render_access_by_hour_chart(dashboard_service):
         height=400
     )
 
-    st.plotly_chart(fig, width='stretch')
+    st.plotly_chart(fig, use_container_width=True)
 
 
 def render_success_rate_chart(dashboard_service):
@@ -428,7 +428,7 @@ def render_success_rate_chart(dashboard_service):
         height=400
     )
 
-    st.plotly_chart(fig, width='stretch')
+    st.plotly_chart(fig, use_container_width=True)
 
 
 def render_top_users_chart(dashboard_service):
@@ -464,7 +464,7 @@ def render_top_users_chart(dashboard_service):
         height=400
     )
 
-    st.plotly_chart(fig, width='stretch')
+    st.plotly_chart(fig, use_container_width=True)
 
 
 def render_notifications_chart(dashboard_service):
@@ -498,7 +498,7 @@ def render_notifications_chart(dashboard_service):
     fig.update_traces(textposition='inside', textinfo='percent+label')
     fig.update_layout(height=400)
 
-    st.plotly_chart(fig, width='stretch')
+    st.plotly_chart(fig, use_container_width=True)
 
 
 def render_overtime_section(dashboard_service):
@@ -602,7 +602,7 @@ def render_overtime_section(dashboard_service):
             showlegend=False
         )
 
-        st.plotly_chart(fig, width='stretch')
+        st.plotly_chart(fig, use_container_width=True)
 
     with col_table:
         st.subheader("💰 Custo Individual")
