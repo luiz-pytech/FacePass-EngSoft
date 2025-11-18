@@ -62,14 +62,6 @@ class UsuarioRepository:
         params = (user_id,)
         self.executor.execute_update(query, params)
 
-    def reject_user(self, user_id: int):
-        """Remove usuário rejeitado do sistema permanentemente"""
-        query = """
-            DELETE FROM users WHERE id = %s
-        """
-        params = (user_id,)
-        self.executor.execute_update(query, params)
-
     def remove_user(self, user_id: int):
         query = """
             DELETE FROM users WHERE id = %s
@@ -91,13 +83,6 @@ class UsuarioRepository:
         results = self.executor.execute_query(query)
         return results
 
-    def list_denied_users(self):
-        query = """
-            SELECT id, name, email, cpf, created_at, photo_recognition, position, approved FROM users WHERE approved = false
-        """
-        results = self.executor.execute_query(query)
-        return results
-
     def list_all_users(self):
         query = """
             SELECT id, name, email, cpf, created_at, photo_recognition, position, approved FROM users
@@ -106,7 +91,6 @@ class UsuarioRepository:
         return results
 
     def update_user(self, usuario: Usuario) -> None:
-        """Atualiza dados de um usuário existente"""
         query = """
             UPDATE users
             SET name = %s, email = %s, cpf = %s, photo_recognition = %s,
@@ -119,13 +103,11 @@ class UsuarioRepository:
         self.executor.execute_update(query, params)
 
     def get_user_count(self) -> int:
-        """Retorna total de usuários cadastrados"""
         query = "SELECT COUNT(*) as total FROM users"
         result = self.executor.execute_query_one(query)
         return result['total'] if result else 0
 
     def get_approved_user_count(self) -> int:
-        """Retorna total de usuários aprovados"""
         query = "SELECT COUNT(*) as total FROM users WHERE approved = true"
         result = self.executor.execute_query_one(query)
         return result['total'] if result else 0

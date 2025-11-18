@@ -118,8 +118,8 @@ def create_database():
 
     if manager_count == 0:
         print("\n📝 Criando gestor padrão...")
-        import hashlib
-        default_password = hashlib.sha256("admin123".encode()).hexdigest()
+        import bcrypt
+        default_password = bcrypt.hashpw("admin123".encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
 
         cursor.execute("""
             INSERT INTO manager (name, email, password_hash)
@@ -144,7 +144,6 @@ def create_database():
     print("  3. accessRegisters")
     print("  4. notifications")
     print("  5. face_encoding")
-    print("\n💡 Próximo passo: Execute 'streamlit run facepass/ui/main.py'\n")
 
 
 if __name__ == "__main__":

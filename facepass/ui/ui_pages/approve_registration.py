@@ -27,7 +27,6 @@ def app():
     # Tabs para organizar funcionalidades
     tab1, tab2 = st.tabs(["⏳ Pendentes de Aprovação", "👥 Todos os Usuários"])
 
-    # ==================== TAB 1: PENDENTES DE APROVAÇÃO ====================
     with tab1:
         st.subheader("Usuários Aguardando Aprovação")
 
@@ -93,7 +92,8 @@ def app():
 
                                 if approve_result['success']:
                                     # Obter face_recognition_controller e cadastrar encoding facial
-                                    face_recognition_controller = st.session_state.get('face_recognition_controller')
+                                    face_recognition_controller = st.session_state.get(
+                                        'face_recognition_controller')
 
                                     if face_recognition_controller:
                                         encoding_result = face_recognition_controller.save_user_face_encoding(
@@ -101,13 +101,17 @@ def app():
                                         )
 
                                         if not encoding_result['success']:
-                                            st.warning(f"⚠️ Usuário aprovado, mas houve erro ao salvar o encoding facial: {encoding_result['message']}")
+                                            st.warning(
+                                                f"⚠️ Usuário aprovado, mas houve erro ao salvar o encoding facial: {encoding_result['message']}")
                                         else:
-                                            st.success(f"✅ Usuário {user.name} aprovado com sucesso!")
+                                            st.success(
+                                                f"✅ Usuário {user.name} aprovado com sucesso!")
                                             st.balloons()
                                     else:
-                                        st.warning(f"⚠️ Usuário aprovado, mas serviço de reconhecimento facial indisponível")
-                                        st.success(f"✅ Usuário {user.name} aprovado (sem reconhecimento facial)!")
+                                        st.warning(
+                                            f"⚠️ Usuário aprovado, mas serviço de reconhecimento facial indisponível")
+                                        st.success(
+                                            f"✅ Usuário {user.name} aprovado (sem reconhecimento facial)!")
 
                                     time.sleep(2)
                                     if f'confirm_reject_{user.id}' in st.session_state:

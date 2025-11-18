@@ -2,10 +2,10 @@ streamlit
 mysql-connector-python
 python-dotenv
 numpy
-dlib-bin
-face_recognition_models
-face-recognition
-git+https://github.com/ageitgey/face_recognition_models
-opencv-python-headless
 pillow
 setuptools
+plotly
+pandas
+bcrypt
+opencv-python-headless
+dlib-bin

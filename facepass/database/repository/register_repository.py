@@ -54,15 +54,7 @@ class RegistroRepository:
         """
         results = self.executor.execute_query(query)
         return results
-
-    def export_registers(self):
-        query = """
-            SELECT id, user_id, created_at, type_access, access_allowed, reason_denied, captured_image
-            FROM accessRegisters
-        """
-        results = self.executor.execute_query(query)
-        return results
-
+    
     def list_all_registers(self):
         query = """
             SELECT id, user_id, created_at, type_access, access_allowed, reason_denied, captured_image
