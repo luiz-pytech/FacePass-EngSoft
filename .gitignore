@@ -3,3 +3,5 @@ CLAUDE.md
 /venv
 MVP_ROADMAP.md
 __pycache__/
+.pytest_cache/
+.DS_Store
