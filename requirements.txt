@@ -8,5 +8,6 @@ plotly
 pandas
 bcrypt
 opencv-python-headless
-dlib-bin
+face_recognition
+cmake
 pytest
