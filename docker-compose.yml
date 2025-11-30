@@ -1,0 +1,63 @@
+services:
+  mysql:
+    image: mysql:8.0
+    container_name: facepass-mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: ${DB_PASSWORD}
+      MYSQL_DATABASE: ${DB_NAME}
+      MYSQL_USER: ${DB_USER}
+      MYSQL_PASSWORD: ${DB_PASSWORD}
+    ports:
+      - "3307:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u${DB_USER}", "-p${DB_PASSWORD}"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+    networks:
+      - facepass-network
+    restart: unless-stopped
+
+  facepass:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: facepass-app
+    depends_on:
+      mysql:
+        condition: service_healthy
+    environment:
+      DB_HOST: mysql
+      DB_USER: ${DB_USER}
+      DB_PASSWORD: ${DB_PASSWORD}
+      DB_NAME: ${DB_NAME}
+      DB_PORT: 3306
+      PYTHONPATH: /app
+    ports:
+      - "8501:8501"
+    volumes:
+      - .:/app
+      - /app/__pycache__
+      - /app/.pytest_cache
+    networks:
+      - facepass-network
+    restart: unless-stopped
+    command: >
+      sh -c "
+        echo 'Aguardando banco de dados...' &&
+        sleep 10 &&
+        echo 'Inicializando banco de dados...' &&
+        python -m facepass.database.setup_database.scripts_tables &&
+        echo 'Iniciando aplicação...' &&
+        streamlit run facepass/ui/app.py --server.address 0.0.0.0 --server.port 8501
+      "
+
+networks:
+  facepass-network:
+    driver: bridge
+
+volumes:
+  mysql_data:
