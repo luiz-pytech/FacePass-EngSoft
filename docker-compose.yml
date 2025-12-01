@@ -51,6 +51,8 @@ services:
         sleep 10 &&
         echo 'Inicializando banco de dados...' &&
         python -m facepass.database.setup_database.scripts_tables &&
+        echo 'Populando banco com dados mockados...' &&
+        python -m facepass.database.setup_database.seed_database &&
         echo 'Iniciando aplicação...' &&
         streamlit run facepass/ui/app.py --server.address 0.0.0.0 --server.port 8501
       "
